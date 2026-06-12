@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
@@ -327,9 +326,12 @@ async function startServer() {
     }
   });
 
-  // Setup Vite Dev Server / Static Asset pipeline
-  if (process.env.NODE_ENV !== "production") {
+  // Setup Vite Dev Server / Static Asset pipeline (auto-detect Render/Production environments)
+  const isProductionMode = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+
+  if (!isProductionMode) {
     console.log("Running in DEVELOPMENT mode with dynamic Vite middleware...");
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

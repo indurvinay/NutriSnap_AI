@@ -1,0 +1,6 @@
+{
+  "name": "Cal AI Clone - AI Calorie Tracker",
+  "description": "Snap a photo of any meal to instantly calculate full calorie counts, macros, and smart nutritional advice powered securely by Gemini 3.5.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

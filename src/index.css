@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-accent: #FF6B6B;
+  --color-accent-light: #FF8E8E;
+}
+
+/* Custom visual effects for high-fidelity Cal AI styling */
+@keyframes radar-sweep {
+  0% {
+    transform: translateY(-10%);
+    opacity: 0.1;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110%);
+    opacity: 0.1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float-badge {
+  0%, 100% {
+    transform: translateY(0px) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+
+@keyframes scale-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Custom CSS classes */
+.scanline-sweep {
+  animation: radar-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, #1f1f1f 25%, #2a2a2a 50%, #1f1f1f 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.float-sparkle {
+  animation: float-badge 3s ease-in-out infinite;
+}
+
+.pulsing-glow {
+  animation: scale-pulse 2s ease-in-out infinite;
+}
+
+/* Smooth custom scrollbars for dark-mode dashboard lists */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0d0d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}

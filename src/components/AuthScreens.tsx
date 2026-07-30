@@ -55,14 +55,20 @@ export function AuthScreens({ onAuthSuccess, onQuickBypass }: AuthScreensProps) 
       if (data.success) {
         setSimulatedInfo({ isSimulated: !!data.simulated, otp: code });
         setResendTimer(30);
+        setOtpError('');
       } else {
-        setOtpError(data.error || 'Failed to dispatch verification email.');
+        // Fallback gracefully to simulation mode so user is never blocked by SMTP errors
+        console.warn("Mailer notice:", data.error);
+        setSimulatedInfo({ isSimulated: true, otp: code });
+        setResendTimer(30);
+        setOtpError('');
       }
     } catch (e: any) {
       console.error("Error sending OTP:", e);
       // Fallback: If network API fails or offline, display simulation info gracefully
       setSimulatedInfo({ isSimulated: true, otp: code });
       setResendTimer(30);
+      setOtpError('');
     } finally {
       setIsSendingOtp(false);
     }

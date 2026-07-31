@@ -3,6 +3,73 @@ import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
+
+// Base32 decode helper for TOTP Google Authenticator
+function base32Decode(base32: string): Buffer {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0;
+  let value = 0;
+  const output: number[] = [];
+  const clean = base32.toUpperCase().replace(/=+$/, '');
+  for (let i = 0; i < clean.length; i++) {
+    const val = alphabet.indexOf(clean[i]);
+    if (val === -1) continue;
+    value = (value << 5) | val;
+    bits += 5;
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(output);
+}
+
+// Generate 16-char Base32 secret for Google Authenticator
+function generateBase32Secret(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let secret = '';
+  const randomBytes = crypto.randomBytes(10);
+  for (let i = 0; i < 16; i++) {
+    secret += chars[randomBytes[i % 10] % chars.length];
+  }
+  return secret;
+}
+
+// Generate TOTP token for secret and time offset
+function generateTOTP(base32Secret: string, timeOffsetWindow: number = 0): string {
+  const key = base32Decode(base32Secret);
+  const timeStep = 30;
+  const epoch = Math.floor(Date.now() / 1000);
+  const timeCounter = Math.floor(epoch / timeStep) + timeOffsetWindow;
+
+  const timeBuffer = Buffer.alloc(8);
+  timeBuffer.writeBigInt64BE(BigInt(timeCounter), 0);
+
+  const hmac = crypto.createHmac('sha1', key);
+  hmac.update(timeBuffer);
+  const digest = hmac.digest();
+
+  const offset = digest[digest.length - 1] & 0xf;
+  const codeInt =
+    ((digest[offset] & 0x7f) << 24) |
+    ((digest[offset + 1] & 0xff) << 16) |
+    ((digest[offset + 2] & 0xff) << 8) |
+    (digest[offset + 3] & 0xff);
+
+  return (codeInt % 1000000).toString().padStart(6, '0');
+}
+
+// Verify TOTP code against Google Authenticator
+function verifyTOTP(token: string, base32Secret: string): boolean {
+  const cleanToken = token.trim();
+  for (let window = -1; window <= 1; window++) {
+    if (generateTOTP(base32Secret, window) === cleanToken) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // Load environment variables from .env
 dotenv.config();
@@ -159,6 +226,36 @@ async function startServer() {
         message: "OTP generated in simulation mode due to SMTP transport notice."
       });
     }
+  });
+
+  // API endpoint to generate Google Authenticator secret & QR Code
+  app.post("/api/totp/generate", (req: Request, res: Response) => {
+    const { email } = req.body || {};
+    const userEmail = email || 'user@caltrack.ai';
+    const secret = generateBase32Secret();
+    const otpauthUri = `otpauth://totp/CalTrack%20AI:${encodeURIComponent(userEmail)}?secret=${secret}&issuer=CalTrack%20AI`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUri)}`;
+    const currentPin = generateTOTP(secret);
+
+    res.json({
+      success: true,
+      secret,
+      otpauthUri,
+      qrCodeUrl,
+      currentPin
+    });
+  });
+
+  // API endpoint to verify Google Authenticator code
+  app.post("/api/totp/verify", (req: Request, res: Response) => {
+    const { token, secret } = req.body || {};
+    if (!token || !secret) {
+      res.status(400).json({ success: false, error: "Token and secret key are required parameters." });
+      return;
+    }
+
+    const isValid = verifyTOTP(token, secret);
+    res.json({ success: isValid, valid: isValid });
   });
 
   // API endpoint for retrieving preseeded database

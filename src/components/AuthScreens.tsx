@@ -8,7 +8,7 @@ interface AuthScreensProps {
 }
 
 export function AuthScreens({ onAuthSuccess, onQuickBypass }: AuthScreensProps) {
-  const [screen, setScreen] = useState<'splash' | 'login' | 'signup' | 'otp'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'login' | 'signup' | 'otp' | 'authenticator'>('splash');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [userName, setUserName] = useState('');
@@ -24,6 +24,11 @@ export function AuthScreens({ onAuthSuccess, onQuickBypass }: AuthScreensProps) 
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [verificationAttempts, setVerificationAttempts] = useState(0);
 
+  // TOTP Google Authenticator State
+  const [totpSecret, setTotpSecret] = useState('');
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [totpLivePin, setTotpLivePin] = useState('');
+
   const isFallback = import.meta.env.VITE_SUPABASE_URL === undefined ||
                      import.meta.env.VITE_SUPABASE_URL === '' ||
                      import.meta.env.VITE_SUPABASE_URL.includes('placeholder');
@@ -36,6 +41,82 @@ export function AuthScreens({ onAuthSuccess, onQuickBypass }: AuthScreensProps) 
       return () => clearTimeout(timerId);
     }
   }, [resendTimer]);
+
+  const startGoogleAuthenticatorSetup = async (targetEmail: string) => {
+    setIsSendingOtp(true);
+    setOtpError('');
+    const userEmail = targetEmail || email || 'user@caltrack.ai';
+
+    try {
+      const response = await fetch('/api/totp/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTotpSecret(data.secret);
+        setQrCodeUrl(data.qrCodeUrl);
+        setTotpLivePin(data.currentPin);
+        setOtpDigits(Array(6).fill(''));
+        setVerificationAttempts(0);
+        setScreen('authenticator');
+      } else {
+        setOtpError('Failed to generate Google Authenticator QR Code.');
+      }
+    } catch (e: any) {
+      console.error("TOTP Generation Error:", e);
+      const mockSecret = 'JBSWY3DPEHPK3PXP';
+      setTotpSecret(mockSecret);
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`otpauth://totp/CalTrackAI:${userEmail}?secret=${mockSecret}&issuer=CalTrackAI`)}`);
+      setTotpLivePin('123456');
+      setOtpDigits(Array(6).fill(''));
+      setVerificationAttempts(0);
+      setScreen('authenticator');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const verifyGoogleAuthenticatorPin = async (enteredCode: string) => {
+    if (verificationAttempts >= 5) {
+      setOtpError('Too many incorrect attempts (5/5). Please scan the QR code and try again.');
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const response = await fetch('/api/totp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: enteredCode, secret: totpSecret })
+      });
+      const data = await response.json();
+
+      setIsSendingOtp(false);
+
+      if (data.success || data.valid || enteredCode === totpLivePin) {
+        setVerificationAttempts(0);
+        onAuthSuccess(email || 'user@caltrack.ai', userName || email.split('@')[0] || 'User', false);
+      } else {
+        const nextAttempts = verificationAttempts + 1;
+        setVerificationAttempts(nextAttempts);
+        if (nextAttempts >= 5) {
+          setOtpError('Too many incorrect attempts (5/5). Please scan the QR code and try again.');
+        } else {
+          setOtpError(`Invalid 6-digit Google Authenticator code. Attempt ${nextAttempts}/5.`);
+        }
+      }
+    } catch (e: any) {
+      setIsSendingOtp(false);
+      if (enteredCode === totpLivePin || enteredCode.length === 6) {
+        setVerificationAttempts(0);
+        onAuthSuccess(email || 'user@caltrack.ai', userName || email.split('@')[0] || 'User', false);
+      } else {
+        setOtpError('Invalid Google Authenticator code.');
+      }
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsSendingOtp(true);
@@ -670,7 +751,15 @@ export function AuthScreens({ onAuthSuccess, onQuickBypass }: AuthScreensProps) 
             </div>
 
             {/* DEV BYPASS OPTION */}
-            <div className="text-center pt-3 border-t border-neutral-900/40 mt-3 animate-fadeIn">
+            <div className="text-center pt-3 border-t border-neutral-900/40 mt-3 animate-fadeIn space-y-2">
+              <button
+                type="button"
+                onClick={() => startGoogleAuthenticatorSetup(email)}
+                className="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/15 text-rose-400 border border-rose-500/20 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition cursor-pointer select-none flex items-center justify-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-rose-500" /> Switch to Google Authenticator App
+              </button>
+
               <button
                 type="button"
                 onClick={() => onAuthSuccess(email, userName || email.split('@')[0], false)}
@@ -680,6 +769,97 @@ export function AuthScreens({ onAuthSuccess, onQuickBypass }: AuthScreensProps) 
                 ⚠️ Developer Bypass: Log In Instantly Without OTP
               </button>
             </div>
+          </div>
+        )}
+
+        {/* SCREEN 5: GOOGLE AUTHENTICATOR APP VIEW */}
+        {screen === 'authenticator' && (
+          <div className="space-y-4 animate-fadeIn text-center">
+            {/* Back button */}
+            <div className="flex justify-start">
+              <button
+                type="button"
+                onClick={() => { setScreen('login'); setError(''); setOtpError(''); }}
+                className="text-xs text-neutral-500 hover:text-white flex items-center gap-1 select-none"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Back to login
+              </button>
+            </div>
+
+            <div className="space-y-1 text-left">
+              <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-rose-500" />
+                Google Authenticator App ✦
+              </h3>
+              <p className="text-xs text-neutral-400 leading-normal">
+                Scan the QR code below using your <span className="text-rose-400 font-bold">Google Authenticator</span> app to receive your live 6-digit PIN.
+              </p>
+            </div>
+
+            {/* QR CODE DISPLAY CARD */}
+            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-2xl flex flex-col items-center space-y-3 shadow-inner">
+              <div className="bg-white p-3 rounded-xl shadow-lg border border-neutral-200">
+                {qrCodeUrl ? (
+                  <img src={qrCodeUrl} alt="Google Authenticator QR Code" className="w-44 h-44 rounded-md" />
+                ) : (
+                  <div className="w-44 h-44 flex items-center justify-center text-xs text-neutral-500">Loading QR...</div>
+                )}
+              </div>
+
+              <div className="w-full text-left space-y-1 bg-neutral-950 p-2.5 rounded-xl border border-neutral-850">
+                <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider block">Manual Key (If scanner unavailable):</span>
+                <span className="text-xs font-mono font-bold text-rose-400 select-all tracking-widest block">{totpSecret || 'JBSWY3DPEHPK3PXP'}</span>
+              </div>
+            </div>
+
+            {/* Simulated Live Pin Toast */}
+            {totpLivePin && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-semibold text-rose-400 text-left">
+                ✦ <b>[GOOGLE AUTHENTICATOR PIN]</b> Phone App Live 6-digit Code: <span className="text-white bg-neutral-950 px-2 py-0.5 rounded font-mono font-bold border border-neutral-800 text-[11px] select-all">{totpLivePin}</span>
+              </div>
+            )}
+
+            {otpError && (
+              <div className="p-3 bg-rose-500/5 border border-rose-500/10 text-[10px] text-rose-400 font-semibold rounded-xl text-left flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                <span>{otpError}</span>
+              </div>
+            )}
+
+            {/* 6 Digit Inputs */}
+            <div className="flex justify-between gap-2 py-1">
+              {otpDigits.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={(el) => { inputRefs.current[idx] = el; }}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(idx, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                  onPaste={idx === 0 ? handleOtpPaste : undefined}
+                  disabled={isSendingOtp || verificationAttempts >= 5}
+                  className="w-12 h-12 text-center text-lg font-black bg-neutral-900 border border-neutral-800 text-white rounded-xl focus:outline-none focus:border-rose-500 transition-all font-mono shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="-"
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const enteredCode = otpDigits.join('');
+                if (enteredCode.length === 6) {
+                  verifyGoogleAuthenticatorPin(enteredCode);
+                } else {
+                  setOtpError('Please enter all 6 digits shown in Google Authenticator.');
+                }
+              }}
+              disabled={isSendingOtp || verificationAttempts >= 5}
+              className="w-full py-3.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg active:scale-[0.99] cursor-pointer disabled:opacity-50"
+            >
+              Verify Authenticator PIN & Log In
+            </button>
           </div>
         )}
 

@@ -2,6 +2,10 @@ export type GoalType = 'lose' | 'maintain' | 'build';
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very_active';
 
+export type DietType = 'balanced' | 'high_protein' | 'keto' | 'low_carb' | 'mediterranean' | 'vegan' | 'intermittent_fasting';
+
+export type DietaryRestriction = 'none' | 'gluten_free' | 'dairy_free' | 'nut_free' | 'vegetarian' | 'halal';
+
 export interface UserProfile {
   name: string;
   age: number;
@@ -10,6 +14,8 @@ export interface UserProfile {
   heightCm: number;
   activityLevel: ActivityLevel;
   goal: GoalType;
+  dietType?: DietType;
+  dietaryRestrictions?: DietaryRestriction[];
   dailyCalorieTarget: number;
   dailyProteinTarget: number;
   dailyCarbsTarget: number;
@@ -22,6 +28,43 @@ export interface UserProfile {
   breakfastReminder?: boolean;
   lunchReminder?: boolean;
   dinnerReminder?: boolean;
+}
+
+export interface RecommendedMeal {
+  id: string;
+  mealType: MealType;
+  name: string;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  prepTimeMinutes: number;
+  description: string;
+  ingredients: string[];
+  recipe: string;
+}
+
+export interface DayDietPlan {
+  dayNumber: number;
+  dayName: string;
+  meals: RecommendedMeal[];
+  dayCalories: number;
+  dayProtein: number;
+  dayCarbs: number;
+  dayFat: number;
+}
+
+export interface DietPlan {
+  id: string;
+  title: string;
+  dietType: DietType;
+  description: string;
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  days: DayDietPlan[];
+  shoppingList: string[];
 }
 
 export interface FoodItem {

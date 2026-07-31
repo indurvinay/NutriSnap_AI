@@ -9,6 +9,7 @@ import { HistoryStats } from './components/HistoryStats';
 import { Subscription } from './components/Subscription';
 import { AuthScreens } from './components/AuthScreens';
 import { ProfileSettings } from './components/ProfileSettings';
+import { DietPlanView } from './components/DietPlanView';
 import { supabase } from './utils/supabaseClient';
 
 import {
@@ -34,6 +35,7 @@ import {
   RotateCcw,
   Sparkle,
   Settings,
+  Utensils,
   X
 } from 'lucide-react';
 
@@ -90,7 +92,7 @@ const mapProfileTsToDb = (ts: UserProfile) => {
 
 export default function App() {
   // Navigation layout active states
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scanner' | 'search' | 'stats' | 'upgrade' | 'profile'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scanner' | 'search' | 'stats' | 'dietplan' | 'upgrade' | 'profile'>('dashboard');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem("caltrack_logged_in");
@@ -1510,6 +1512,22 @@ export default function App() {
           </div>
         )}
 
+        {/* AI DIET PLAN RECOMMENDATION & ADHERENCE COUPLER */}
+        {activeTab === 'dietplan' && (
+          <div className="animate-fadeIn">
+            <DietPlanView
+              profile={profile}
+              todayLog={currentDayLog}
+              onUpdateProfile={saveProfileState}
+              onLogMeal={handleLogMeal}
+              onUpgradePrompt={() => {
+                setActiveTab('upgrade');
+                triggerToast("Explore Macro Mastery Pro for unlimited custom diet generation!");
+              }}
+            />
+          </div>
+        )}
+
         {/* PREMIUM PAYWALL SUBSCRIPTION TAB COUPLER */}
         {activeTab === 'upgrade' && (
           <div className="animate-fadeIn">
@@ -1542,7 +1560,7 @@ export default function App() {
 
       </main>
 
-      {/* CORE MOBILE TAB NAV BAR (Centering beautifully on desktop and fitting on mobile screen size bounds) */}
+      {/* CORE MOBILE TAB NAV BAR */}
       <footer className="bg-[#0c0c0c] border-t border-neutral-900 select-none py-2 sticky bottom-0 z-40 backdrop-blur">
         <div className="max-w-lg mx-auto grid grid-cols-6 gap-0.5 px-2">
           
@@ -1579,7 +1597,18 @@ export default function App() {
             <span className="text-[10px] tracking-wide">Search</span>
           </button>
 
-          {/* Tab 4: Analytics */}
+          {/* Tab 4: AI Diet Plan */}
+          <button
+            onClick={() => setActiveTab('dietplan')}
+            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+              activeTab === 'dietplan' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
+            }`}
+          >
+            <Utensils className="w-5 h-5 mb-1" />
+            <span className="text-[10px] tracking-wide">Diet Plan</span>
+          </button>
+
+          {/* Tab 5: Analytics */}
           <button
             onClick={() => setActiveTab('stats')}
             className={`flex flex-col items-center py-2 rounded-xl transition-all ${
@@ -1590,7 +1619,7 @@ export default function App() {
             <span className="text-[10px] tracking-wide">Stats</span>
           </button>
 
-          {/* Tab 5: Profile & Settings */}
+          {/* Tab 6: Profile & Settings */}
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex flex-col items-center py-2 rounded-xl transition-all ${

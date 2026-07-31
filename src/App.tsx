@@ -635,196 +635,160 @@ export default function App() {
     addedFat: number
   ) => {
     if (!profile) return;
+
+    // 1. Instantly construct updated local items & log state
+    const newItems: FoodItem[] = items.map((item, idx) => ({
+      ...item,
+      id: (item as any).id || `item-${Date.now()}-${idx}`
+    }));
+
+    const currentLog = getDailyLogForDate(activeDate);
+    const existingMeal = currentLog.meals[mealType];
+    const mealId = existingMeal.id || `meal-${mealType}-${activeDate}`;
+
+    const updatedItems = [...existingMeal.items, ...newItems];
+    const sumCalories = updatedItems.reduce((acc, i) => acc + (i.calories || 0), 0);
+    const sumProtein = updatedItems.reduce((acc, i) => acc + (i.proteinG || 0), 0);
+    const sumCarbs = updatedItems.reduce((acc, i) => acc + (i.carbsG || 0), 0);
+    const sumFat = updatedItems.reduce((acc, i) => acc + (i.fatG || 0), 0);
+
+    const updatedMeal: Meal = {
+      ...existingMeal,
+      id: mealId,
+      items: updatedItems,
+      totalCalories: Math.round(sumCalories),
+      totalProtein: Number(sumProtein.toFixed(1)),
+      totalCarbs: Number(sumCarbs.toFixed(1)),
+      totalFat: Number(sumFat.toFixed(1)),
+      timeLogged: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    const updatedLog: DailyLog = {
+      ...currentLog,
+      meals: {
+        ...currentLog.meals,
+        [mealType]: updatedMeal
+      }
+    };
+
+    const nextLogs = {
+      ...logs,
+      [activeDate]: updatedLog
+    };
+
+    // 2. Update React State & localStorage IMMEDIATELY (0ms delay UI response)
+    setLogs(nextLogs);
+    localStorage.setItem(LOCAL_STORAGE_LOGS_KEY, JSON.stringify(nextLogs));
+    verifyCalendarStreaks(nextLogs, profile);
+    triggerToast(`Logged ${mealName || mealType}! +${Math.round(addedCalories)} kcal 🥗`);
+    setActiveTab('dashboard');
+
+    // 3. Persist asynchronously to Supabase Database in background
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const currentLog = getDailyLogForDate(activeDate);
-      const existingMeal = currentLog.meals[mealType];
-      let mealId = existingMeal.id;
-
-      if (!mealId) {
-        const { data: newMeal, error: mealErr } = await supabase
+      let dbMealId = existingMeal.id;
+      if (!dbMealId || dbMealId.startsWith('meal-')) {
+        const { data: newMeal } = await supabase
           .from('meals')
           .insert({
             user_id: user.id,
             log_date: activeDate,
             type: mealType,
             name: mealName || mealType,
-            total_calories: addedCalories,
-            total_protein: addedProtein,
-            total_carbs: addedCarbs,
-            total_fat: addedFat
+            total_calories: sumCalories,
+            total_protein: sumProtein,
+            total_carbs: sumCarbs,
+            total_fat: sumFat
           })
           .select()
           .single();
 
-        if (mealErr) {
-          console.error("Failed to insert meal row", mealErr);
-          return;
-        }
-        mealId = newMeal.id;
+        if (newMeal) dbMealId = newMeal.id;
       } else {
-        const newTotalCalories = existingMeal.totalCalories + addedCalories;
-        const newTotalProtein = existingMeal.totalProtein + addedProtein;
-        const newTotalCarbs = existingMeal.totalCarbs + addedCarbs;
-        const newTotalFat = existingMeal.totalFat + addedFat;
-
-        const { error: mealErr } = await supabase
+        await supabase
           .from('meals')
           .update({
-            total_calories: newTotalCalories,
-            total_protein: newTotalProtein,
-            total_carbs: newTotalCarbs,
-            total_fat: newTotalFat
+            total_calories: sumCalories,
+            total_protein: sumProtein,
+            total_carbs: sumCarbs,
+            total_fat: sumFat
           })
-          .eq('id', mealId);
-
-        if (mealErr) {
-          console.error("Failed to update meal row", mealErr);
-          return;
-        }
+          .eq('id', dbMealId);
       }
 
-      const itemsToInsert = items.map(item => ({
-        meal_id: mealId,
-        name: item.name,
-        portion: item.portion,
-        calories: item.calories,
-        protein_g: item.proteinG,
-        carbs_g: item.carbsG,
-        fat_g: item.fatG,
-        confidence: item.confidence || null,
-        category: item.category || 'Generic',
-        image_uri: item.imageUri || null,
-        is_custom: item.isCustom ?? false
-      }));
-
-      const { data: insertedItems, error: itemsErr } = await supabase
-        .from('meal_items')
-        .insert(itemsToInsert)
-        .select();
-
-      if (itemsErr) {
-        console.error("Failed to insert constituent meal items", itemsErr);
-        return;
+      if (dbMealId) {
+        const itemsToInsert = newItems.map(item => ({
+          meal_id: dbMealId,
+          name: item.name,
+          portion: item.portion,
+          calories: item.calories,
+          protein_g: item.proteinG,
+          carbs_g: item.carbsG,
+          fat_g: item.fatG,
+          confidence: item.confidence || null,
+          category: item.category || 'Generic',
+          image_uri: item.imageUri || null,
+          is_custom: item.isCustom ?? false
+        }));
+        await supabase.from('meal_items').insert(itemsToInsert);
       }
-
-      const mappedNewItems: FoodItem[] = insertedItems.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        portion: item.portion,
-        calories: item.calories,
-        proteinG: Number(item.protein_g),
-        carbsG: Number(item.carbs_g),
-        fatG: Number(item.fat_g),
-        confidence: item.confidence ? Number(item.confidence) : undefined,
-        category: item.category,
-        imageUri: item.image_uri,
-        isCustom: item.is_custom
-      }));
-
-      const updatedItems = [...existingMeal.items, ...mappedNewItems];
-      const sumCalories = updatedItems.reduce((acc, i) => acc + i.calories, 0);
-      const sumProtein = updatedItems.reduce((acc, i) => acc + i.proteinG, 0);
-      const sumCarbs = updatedItems.reduce((acc, i) => acc + i.carbsG, 0);
-      const sumFat = updatedItems.reduce((acc, i) => acc + i.fatG, 0);
-
-      const updatedMeal: Meal = {
-        ...existingMeal,
-        id: mealId,
-        items: updatedItems,
-        totalCalories: sumCalories,
-        totalProtein: Number(sumProtein.toFixed(1)),
-        totalCarbs: Number(sumCarbs.toFixed(1)),
-        totalFat: Number(sumFat.toFixed(1)),
-        timeLogged: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      const updatedLog: DailyLog = {
-        ...currentLog,
-        meals: {
-          ...currentLog.meals,
-          [mealType]: updatedMeal
-        }
-      };
-
-      const nextLogs = {
-        ...logs,
-        [activeDate]: updatedLog
-      };
-
-      setLogs(nextLogs);
-      verifyCalendarStreaks(nextLogs, profile);
-      
-      triggerToast(`Logged ${mealName || 'Food Rec'} successfully to ${mealType}!`);
-      setActiveTab('dashboard');
     } catch (e) {
-      console.error("Failed to log meal to database:", e);
+      console.error("Background database persistence note:", e);
     }
   };
 
   // REMOVE FOOD INGREDIENT MUTATOR
   const handleDeleteFood = async (mealType: MealType, itemId: string) => {
     if (!profile) return;
+    const currentLog = getDailyLogForDate(activeDate);
+    const targetMeal = currentLog.meals[mealType];
+
+    const updatedItems = targetMeal.items.filter(i => i.id !== itemId);
+    const sumCalories = updatedItems.reduce((acc, i) => acc + (i.calories || 0), 0);
+    const sumProtein = updatedItems.reduce((acc, i) => acc + (i.proteinG || 0), 0);
+    const sumCarbs = updatedItems.reduce((acc, i) => acc + (i.carbsG || 0), 0);
+    const sumFat = updatedItems.reduce((acc, i) => acc + (i.fatG || 0), 0);
+
+    const updatedMeal: Meal = {
+      ...targetMeal,
+      items: updatedItems,
+      totalCalories: Math.round(sumCalories),
+      totalProtein: Number(sumProtein.toFixed(1)),
+      totalCarbs: Number(sumCarbs.toFixed(1)),
+      totalFat: Number(sumFat.toFixed(1)),
+    };
+
+    const updatedLog: DailyLog = {
+      ...currentLog,
+      meals: {
+        ...currentLog.meals,
+        [mealType]: updatedMeal
+      }
+    };
+
+    const nextLogs = {
+      ...logs,
+      [activeDate]: updatedLog
+    };
+
+    setLogs(nextLogs);
+    localStorage.setItem(LOCAL_STORAGE_LOGS_KEY, JSON.stringify(nextLogs));
+    triggerToast("Item removed from food log.");
+
     try {
-      const { error: deleteErr } = await supabase
-        .from('meal_items')
-        .delete()
-        .eq('id', itemId);
-
-      if (deleteErr) {
-        console.error("Failed to delete item from database", deleteErr);
-        return;
-      }
-
-      const currentLog = getDailyLogForDate(activeDate);
-      const targetMeal = currentLog.meals[mealType];
-
-      const updatedItems = targetMeal.items.filter(i => i.id !== itemId);
-      const sumCalories = updatedItems.reduce((acc, i) => acc + i.calories, 0);
-      const sumProtein = updatedItems.reduce((acc, i) => acc + i.proteinG, 0);
-      const sumCarbs = updatedItems.reduce((acc, i) => acc + i.carbsG, 0);
-      const sumFat = updatedItems.reduce((acc, i) => acc + i.fatG, 0);
-
-      const { error: mealErr } = await supabase
-        .from('meals')
-        .update({
-          total_calories: sumCalories,
-          total_protein: sumProtein,
-          total_carbs: sumCarbs,
-          total_fat: sumFat
-        })
-        .eq('id', targetMeal.id);
-
-      if (mealErr) {
-        console.error("Failed to update parent meal totals in database", mealErr);
-      }
-
-      const updatedMeal: Meal = {
-        ...targetMeal,
-        items: updatedItems,
-        totalCalories: sumCalories,
-        totalProtein: Number(sumProtein.toFixed(1)),
-        totalCarbs: Number(sumCarbs.toFixed(1)),
-        totalFat: Number(sumFat.toFixed(1)),
-      };
-
-      const updatedLog: DailyLog = {
-        ...currentLog,
-        meals: {
-          ...currentLog.meals,
-          [mealType]: updatedMeal
+      if (!itemId.startsWith('item-')) {
+        await supabase.from('meal_items').delete().eq('id', itemId);
+        if (targetMeal.id && !targetMeal.id.startsWith('meal-')) {
+          await supabase.from('meals').update({
+            total_calories: sumCalories,
+            total_protein: sumProtein,
+            total_carbs: sumCarbs,
+            total_fat: sumFat
+          }).eq('id', targetMeal.id);
         }
-      };
-
-      const nextLogs = {
-        ...logs,
-        [activeDate]: updatedLog
-      };
-
-      setLogs(nextLogs);
-      triggerToast("Item removed from food log.");
+      }
     } catch (e) {
       console.error("Failed to delete food item from database:", e);
     }

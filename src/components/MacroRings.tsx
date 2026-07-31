@@ -30,37 +30,11 @@ export function MacroRings({
   }, []);
 
   useEffect(() => {
-    let startTimestamp: number | null = null;
-    const duration = 1200; // 1.2s to match the path stroke transition
-    
-    const targetPercent = Math.min(100, (calories.current / (calories.target || 1)) * 100);
-    const targetRemaining = Math.max(0, calories.target - calories.current);
+    setIsMounted(true);
+  }, []);
 
-    const startPercent = 0;
-    const startRemaining = calories.target || 2000;
-
-    let frameId: number;
-
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      
-      // cubic-bezier(0.16, 1, 0.3, 1) / easeOutCubic:
-      const ease = 1 - Math.pow(1 - progress, 3);
-      
-      setAnimatedPercent(startPercent + ease * (targetPercent - startPercent));
-      setAnimatedRemaining(Math.round(startRemaining - ease * (startRemaining - targetRemaining)));
-
-      if (progress < 1) {
-        frameId = window.requestAnimationFrame(step);
-      }
-    };
-
-    frameId = window.requestAnimationFrame(step);
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [calories.current, calories.target]);
+  const calRemaining = Math.max(0, calories.target - calories.current);
+  const calPercent = Math.min(100, Math.max(0, (calories.current / (calories.target || 1)) * 100));
 
   // Center coordinates and math for nested rings
   const center = size / 2;
@@ -86,9 +60,6 @@ export function MacroRings({
   const offsetProtein = isMounted ? cProtein - (pctProtein * cProtein) / 100 : cProtein;
   const offsetCarbs = isMounted ? cCarbs - (pctCarbs * cCarbs) / 100 : cCarbs;
   const offsetFat = isMounted ? cFat - (pctFat * cFat) / 100 : cFat;
-
-  const calRemaining = Math.max(0, calories.target - calories.current);
-  const calPercent = Math.min(100, (calories.current / (calories.target || 1)) * 100);
 
   return (
     <div className="flex flex-col items-center justify-center select-none" id="component-macro-rings">
@@ -188,7 +159,7 @@ export function MacroRings({
         {/* Center Text Layer showing visual summary percentage directly within the ring center */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
           <span className="text-3xl font-black text-rose-500 tracking-tighter font-mono animate-scaleUp">
-            {Math.round(animatedPercent)}%
+            {Math.round(calPercent)}%
           </span>
           <span className="text-[8px] font-black tracking-widest text-neutral-400 uppercase mt-0.5">
             BUDGET MET
@@ -197,7 +168,7 @@ export function MacroRings({
           <div className="h-[1px] w-12 bg-neutral-850 my-1.5" />
 
           <span className="text-lg font-black text-white tracking-tight leading-none font-mono">
-            {animatedRemaining.toLocaleString()}
+            {calRemaining.toLocaleString()}
           </span>
           <span className="text-neutral-500 text-[8px] font-black uppercase tracking-wider mt-0.5">
             kcal left

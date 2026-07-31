@@ -216,8 +216,8 @@ export function DietPlanView({
       </div>
 
       {/* NAVIGATION SUB-TABS */}
-      <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-neutral-800 pb-3 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
           <button
             onClick={() => setActiveTab('schedule')}
             className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer ${

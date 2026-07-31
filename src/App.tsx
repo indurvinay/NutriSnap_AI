@@ -1561,87 +1561,86 @@ export default function App() {
       </main>
 
       {/* CORE MOBILE TAB NAV BAR */}
-      <footer className="bg-[#0c0c0c] border-t border-neutral-900 select-none py-2 sticky bottom-0 z-40 backdrop-blur">
-        <div className="max-w-lg mx-auto grid grid-cols-6 gap-0.5 px-2">
+      <footer className="bg-[#0c0c0c] border-t border-neutral-900 select-none py-1.5 sticky bottom-0 z-40 backdrop-blur">
+        <div className="max-w-xl mx-auto grid grid-cols-7 gap-0.5 px-1 text-center">
           
           {/* Tab 1: Dashboard */}
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
               activeTab === 'dashboard' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <Calendar className="w-5 h-5 mb-1" />
-            <span className="text-[10px] tracking-wide">Diary</span>
+            <Calendar className="w-4.5 h-4.5 mb-0.5" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">Diary</span>
           </button>
 
           {/* Tab 2: Scanner */}
           <button
             onClick={() => setActiveTab('scanner')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
               activeTab === 'scanner' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <Camera className="w-5 h-5 mb-1" />
-            <span className="text-[10px] tracking-wide">AI Scan</span>
+            <Camera className="w-4.5 h-4.5 mb-0.5" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">AI Scan</span>
           </button>
 
           {/* Tab 3: Search */}
           <button
             onClick={() => setActiveTab('search')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
               activeTab === 'search' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <Search className="w-5 h-5 mb-1" />
-            <span className="text-[10px] tracking-wide">Search</span>
+            <Search className="w-4.5 h-4.5 mb-0.5" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">Search</span>
           </button>
 
           {/* Tab 4: AI Diet Plan */}
           <button
             onClick={() => setActiveTab('dietplan')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
               activeTab === 'dietplan' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <Utensils className="w-5 h-5 mb-1" />
-            <span className="text-[10px] tracking-wide">Diet Plan</span>
+            <Utensils className="w-4.5 h-4.5 mb-0.5" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">Diet Plan</span>
           </button>
 
           {/* Tab 5: Analytics */}
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
               activeTab === 'stats' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <BarChart3 className="w-5 h-5 mb-1" />
-            <span className="text-[10px] tracking-wide">Stats</span>
+            <BarChart3 className="w-4.5 h-4.5 mb-0.5" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">Stats</span>
           </button>
 
           {/* Tab 6: Profile & Settings */}
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all ${
               activeTab === 'profile' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <User className="w-5 h-5 mb-1" />
-            <span className="text-[10px] tracking-wide">Profile</span>
+            <User className="w-4.5 h-4.5 mb-0.5" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">Profile</span>
           </button>
 
-          {/* Tab 6: Premium entitlements */}
+          {/* Tab 7: Premium entitlements */}
           <button
             onClick={() => setActiveTab('upgrade')}
-            className={`flex flex-col items-center py-2 rounded-xl transition-all relative ${
+            className={`flex flex-col items-center py-1.5 px-1 rounded-xl transition-all relative ${
               activeTab === 'upgrade' ? 'text-rose-500 font-extrabold scale-105' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
-            <Sparkles className="w-5 h-5 mb-1 text-rose-400" />
-            <span className="text-[10px] tracking-wide font-medium">Premium</span>
-            {/* Pulsing indicator tag */}
+            <Sparkles className="w-4.5 h-4.5 mb-0.5 text-rose-400" />
+            <span className="text-[9px] tracking-tight font-medium whitespace-nowrap">Premium</span>
             {!profile.isPremium && (
-              <span className="absolute top-1.5 right-3 w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+              <span className="absolute top-1 right-2 w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
             )}
           </button>
 

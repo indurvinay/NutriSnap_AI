@@ -10,6 +10,9 @@ import { Subscription } from './components/Subscription';
 import { AuthScreens } from './components/AuthScreens';
 import { ProfileSettings } from './components/ProfileSettings';
 import { DietPlanView } from './components/DietPlanView';
+import { GlycemicShield } from './components/GlycemicShield';
+import { MacroSquadView } from './components/MacroSquadView';
+import { MetabolismTracker } from './components/MetabolismTracker';
 import { supabase } from './utils/supabaseClient';
 
 import {
@@ -1468,6 +1471,24 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
+              {/* ADVANCED AI METABOLISM & GLYCEMIC SHIELD ENGINE MODULES */}
+              <GlycemicShield
+                todayLog={currentDayLog}
+                showToast={triggerToast}
+              />
+
+              <MetabolismTracker
+                profile={profile}
+                todayLog={currentDayLog}
+                onUpdateProfile={saveProfileState}
+                showToast={triggerToast}
+              />
+
+              <MacroSquadView
+                profile={profile}
+                showToast={triggerToast}
+              />
 
             </div>
 

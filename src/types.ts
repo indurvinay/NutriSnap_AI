@@ -140,3 +140,29 @@ export interface PresetMealDemo {
     fatG: number;
   }[];
 }
+
+export type CycleDayType = 'training' | 'rest';
+
+export interface MicronutrientTracker {
+  zincMg: number; // Target: 15mg
+  magnesiumMg: number; // Target: 400mg
+  vitaminD3IU: number; // Target: 2000IU
+  fiberG: number; // Target: 30g minimum
+}
+
+export interface MacroSquadMember {
+  id: string;
+  name: string;
+  avatar: string;
+  streakDays: number;
+  hasLoggedToday: boolean;
+}
+
+export interface MacroSquad {
+  id: string;
+  name: string;
+  guildLevel: number;
+  guildXp: number;
+  streakInsuranceTokens: number;
+  members: MacroSquadMember[];
+}

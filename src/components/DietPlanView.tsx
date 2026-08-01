@@ -449,32 +449,32 @@ export function DietPlanView({
                     </div>
                   </div>
 
-                  {/* ACTION BUTTONS: RECIPE, AI SWAP & JOURNAL LOG */}
-                  <div className="flex gap-2 pt-2 border-t border-neutral-900">
+                  {/* ACTION BUTTONS: RECIPE & PORTION SCALER, AI SWAP & JOURNAL LOG */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-neutral-900">
                     <button
                       onClick={() => {
                         setSelectedMealRecipe(meal);
                         setCookingPortionScale(1);
                       }}
-                      className="p-2 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-xs font-bold rounded-xl border border-neutral-800 flex items-center justify-center gap-1 transition cursor-pointer"
-                      title="View Cooking Recipe"
+                      className="flex-1 py-2 bg-neutral-900 hover:bg-neutral-800 text-rose-400 border border-rose-500/30 text-xs font-extrabold rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                      title="View Interactive Cooking Recipe & Portion Scaler"
                     >
-                      <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
+                      <BookOpen className="w-3.5 h-3.5 text-rose-500" /> 👩‍🍳 Recipe & Scaler
                     </button>
 
                     <button
                       onClick={() => handleSwapMealWithAlternative(baseMeal)}
-                      className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-amber-400 text-xs font-bold rounded-xl border border-neutral-800 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      className="flex-1 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-extrabold rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.15)]"
                       title="Swap for AI Alternative"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" /> AI Swap
+                      <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin-slow" /> 🔄 AI Swap
                     </button>
 
                     <button
                       onClick={() => handleQuickLogRecommendedMeal(meal)}
-                      className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-[0_0_12px_rgba(244,63,94,0.3)] cursor-pointer"
+                      className="w-full py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-black rounded-xl flex items-center justify-center gap-1.5 transition shadow-[0_0_15px_rgba(244,63,94,0.3)] cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Log to Journal
+                      <Plus className="w-3.5 h-3.5" /> ➕ Log Meal to Journal
                     </button>
                   </div>
                 </div>

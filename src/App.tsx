@@ -1181,7 +1181,80 @@ export default function App() {
 
         {/* TAB NAVIGATION COUPLER (Dashboard tabs logic) */}
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 animate-fadeIn">
+          <div className="space-y-6 animate-fadeIn">
+            {/* AI SUPER FEATURES QUICK HUB BAR */}
+            <div className="bg-[#141414] p-4 rounded-2xl border border-neutral-800 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-rose-500 animate-pulse" /> AI Intelligence & Super Features Center
+                </span>
+                <span className="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-full font-mono font-bold">
+                  7/7 ACTIVE MODULES
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 font-mono">
+                <button
+                  onClick={() => setActiveTab('dietplan')}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                >
+                  🎙️ AI Voice Coach
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('dietplan')}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                >
+                  🔄 AI Meal Swapper
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('dietplan')}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                >
+                  👩‍🍳 Cooking & Scaler
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('scanner')}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-blue-400 border border-blue-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer shadow-[0_0_10px_rgba(59,130,246,0.15)]"
+                >
+                  👁️ AR 3D Depth Lens
+                </button>
+
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('component-cgm-shield');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.15)]"
+                >
+                  🩸 CGM Spike Shield
+                </button>
+
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('component-metabolism');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer"
+                >
+                  🏋️ Carb Cycling Matrix
+                </button>
+
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('component-macro-squad');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-pink-400 border border-pink-500/30 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition cursor-pointer"
+                >
+                  👥 Macro Squads
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             
             {/* LEFT 2 PANELS: GOALS, RINGS, WATER, QUICK ACTIONS */}
             <div className="lg:col-span-2 space-y-6">
@@ -1491,9 +1564,9 @@ export default function App() {
               />
 
             </div>
-
           </div>
-        )}
+        </div>
+      )}
 
         {/* SCANNER VIEW TAB COUPLER */}
         {activeTab === 'scanner' && (

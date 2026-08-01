@@ -1524,6 +1524,7 @@ export default function App() {
                 setActiveTab('upgrade');
                 triggerToast("Explore Macro Mastery Pro for unlimited custom diet generation!");
               }}
+              showToast={triggerToast}
             />
           </div>
         )}

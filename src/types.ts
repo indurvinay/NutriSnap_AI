@@ -4,6 +4,8 @@ export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very_active';
 
 export type DietType = 'balanced' | 'high_protein' | 'keto' | 'low_carb' | 'mediterranean' | 'vegan' | 'intermittent_fasting';
 
+export type CuisineType = 'all' | 'indian' | 'asian' | 'mediterranean' | 'western' | 'mexican';
+
 export type DietaryRestriction = 'none' | 'gluten_free' | 'dairy_free' | 'nut_free' | 'vegetarian' | 'halal';
 
 export interface UserProfile {
@@ -15,6 +17,7 @@ export interface UserProfile {
   activityLevel: ActivityLevel;
   goal: GoalType;
   dietType?: DietType;
+  cuisinePreference?: CuisineType;
   dietaryRestrictions?: DietaryRestriction[];
   dailyCalorieTarget: number;
   dailyProteinTarget: number;
@@ -34,14 +37,24 @@ export interface RecommendedMeal {
   id: string;
   mealType: MealType;
   name: string;
+  cuisine: CuisineType;
   calories: number;
   proteinG: number;
   carbsG: number;
   fatG: number;
   prepTimeMinutes: number;
+  glycemicIndex: 'low' | 'medium' | 'high';
   description: string;
   ingredients: string[];
   recipe: string;
+  swapAlternatives?: {
+    name: string;
+    calories: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+    ingredients: string[];
+  }[];
 }
 
 export interface DayDietPlan {
@@ -54,17 +67,23 @@ export interface DayDietPlan {
   dayFat: number;
 }
 
+export interface GroceryAisle {
+  category: string;
+  items: string[];
+}
+
 export interface DietPlan {
   id: string;
   title: string;
   dietType: DietType;
+  cuisine: CuisineType;
   description: string;
   targetCalories: number;
   targetProtein: number;
   targetCarbs: number;
   targetFat: number;
   days: DayDietPlan[];
-  shoppingList: string[];
+  shoppingAisles: GroceryAisle[];
 }
 
 export interface FoodItem {

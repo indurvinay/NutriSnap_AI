@@ -1,4 +1,4 @@
-import { UserProfile, DietPlan, DietType, RecommendedMeal, DayDietPlan } from '../types';
+import { UserProfile, DietPlan, DietType, CuisineType, RecommendedMeal, DayDietPlan, GroceryAisle } from '../types';
 
 export const generatePersonalizedDietPlan = (profile: UserProfile): DietPlan => {
   const targetCal = profile.dailyCalorieTarget || 2000;
@@ -6,485 +6,432 @@ export const generatePersonalizedDietPlan = (profile: UserProfile): DietPlan => 
   const targetCarb = profile.dailyCarbsTarget || 200;
   const targetFat = profile.dailyFatTarget || 65;
   const selectedDiet: DietType = profile.dietType || (profile.goal === 'build' ? 'high_protein' : profile.goal === 'lose' ? 'low_carb' : 'balanced');
+  const selectedCuisine: CuisineType = profile.cuisinePreference || 'all';
 
   const dietTitles: Record<DietType, string> = {
-    high_protein: "Lean Muscle Hypertrophy & High Protein Plan",
-    keto: "Ketogenic Fat Burning & Ultra Low-Carb Plan",
-    balanced: "Optimal Macro Balance & Daily Vitality Plan",
-    low_carb: "Metabolic Caloric Deficit & Low-Carb Plan",
-    mediterranean: "Cardiovascular Health & Mediterranean Plan",
-    vegan: "Plant-Based Vitality & Micronutrient Rich Plan",
-    intermittent_fasting: "16:8 Autophagy & Intermittent Fasting Plan"
+    high_protein: "Hypertrophy & Ultra High-Protein Architecture",
+    keto: "Ketogenic Lipolysis & Fat-Adaptation Master Plan",
+    balanced: "Metabolic Longevity & Macro Precision Balance",
+    low_carb: "Insulin-Optimized Low Carb & Deficit Engine",
+    mediterranean: "Cardiovascular & Polyunsaturated Fatty Acid Plan",
+    vegan: "100% Bioavailable Plant-Based Macro Architecture",
+    intermittent_fasting: "16:8 Autophagy & Cellular Renewal Protocol"
   };
 
-  const dietDescriptions: Record<DietType, string> = {
-    high_protein: `Tailored for ${profile.goal === 'build' ? 'muscle hypertrophy' : 'lean mass retention'}. Delivers ${targetProt}g protein daily split across 4 nutrient-dense meals to maximize protein synthesis.`,
-    keto: `High healthy fat (70%) and minimal net carbs (<30g daily) to induce nutritional ketosis and accelerate lipolysis for weight loss.`,
-    balanced: `Sustained daily energy with 40% carbs, 30% protein, and 30% healthy fats suitable for long-term health maintenance.`,
-    low_carb: `Controlled carbohydrate intake to minimize insulin spikes and maximize steady fat burning throughout the day.`,
-    mediterranean: `Rich in omega-3 fatty acids, extra virgin olive oil, wild seafood, legumes, and antioxidants for longevity.`,
-    vegan: `100% plant-based protein sources including quinoa, lentils, edamame, and tofu formulated to fulfill all essential amino acids.`,
-    intermittent_fasting: `Structured 16-hour fasting / 8-hour eating window to boost growth hormone, cellular repair, and insulin sensitivity.`
-  };
-
-  const mealTemplates: Record<DietType, { b: RecommendedMeal[]; l: RecommendedMeal[]; d: RecommendedMeal[]; s: RecommendedMeal[] }> = {
-    high_protein: {
+  // MULTI-CUISINE MEAL REPOSITORY WITH SWAP ALTERNATIVES & GLYCEMIC TAGS
+  const cuisineMealDatabase: Record<CuisineType, { b: RecommendedMeal[]; l: RecommendedMeal[]; d: RecommendedMeal[]; s: RecommendedMeal[] }> = {
+    indian: {
       b: [
         {
-          id: 'hp-b1',
+          id: 'ind-b1',
           mealType: 'breakfast',
-          name: 'Egg White & Whey Protein Power Bowl',
+          name: 'Paneer & Oats Protein Chilla with Mint Chutney',
+          cuisine: 'indian',
           calories: Math.round(targetCal * 0.25),
-          proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.2),
-          fatG: Math.round(targetFat * 0.2),
-          prepTimeMinutes: 10,
-          description: 'Fluffy scramble of 4 egg whites and 2 whole eggs served with steel-cut oats topped with berries and cinnamon.',
-          ingredients: ['4 Egg Whites', '2 Whole Eggs', '50g Steel-cut Oats', '30g Blueberries', '1 scoop Whey Protein'],
-          recipe: 'Whisk egg whites with whole eggs. Cook in non-stick pan over medium heat. Serve alongside warm oats stirred with protein powder and fresh blueberries.'
-        },
-        {
-          id: 'hp-b2',
-          mealType: 'breakfast',
-          name: 'Greek Yogurt & Almond Protein Crunch',
-          calories: Math.round(targetCal * 0.25),
-          proteinG: Math.round(targetProt * 0.32),
-          carbsG: Math.round(targetCarb * 0.18),
-          fatG: Math.round(targetFat * 0.22),
-          prepTimeMinutes: 5,
-          description: 'Triple-zero Greek yogurt layered with chia seeds, crushed almonds, and organic honey.',
-          ingredients: ['250g Non-fat Greek Yogurt', '15g Chia Seeds', '20g Sliced Almonds', '10g Honey'],
-          recipe: 'Layer Greek yogurt in a bowl. Sprinkle chia seeds and sliced almonds on top. Drizzle organic honey before serving.'
-        }
-      ],
-      l: [
-        {
-          id: 'hp-l1',
-          mealType: 'lunch',
-          name: 'Grilled Herb Chicken & Quinoa Energy Bowl',
-          calories: Math.round(targetCal * 0.32),
-          proteinG: Math.round(targetProt * 0.35),
-          carbsG: Math.round(targetCarb * 0.35),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 20,
-          description: 'Seasoned chicken breast grilled to perfection, paired with fluffy quinoa and steamed broccoli.',
-          ingredients: ['200g Chicken Breast', '80g Quinoa (cooked)', '150g Broccoli florets', '1 tsp Olive Oil'],
-          recipe: 'Season chicken breast with garlic and herbs. Grill over medium-high heat for 6 mins per side. Serve over cooked quinoa with steamed broccoli florets.'
-        },
-        {
-          id: 'hp-l2',
-          mealType: 'lunch',
-          name: 'Seared Salmon & Sweet Potato Clean Plate',
-          calories: Math.round(targetCal * 0.32),
-          proteinG: Math.round(targetProt * 0.33),
-          carbsG: Math.round(targetCarb * 0.32),
-          fatG: Math.round(targetFat * 0.3),
-          prepTimeMinutes: 25,
-          description: 'Wild-caught salmon fillet rich in omega-3s, served with roasted sweet potato wedges and asparagus.',
-          ingredients: ['180g Wild Salmon Fillet', '150g Roasted Sweet Potato', '100g Asparagus spears', 'Lemon squeeze'],
-          recipe: 'Pan-sear salmon skin-side down for 4 mins, flip and cook 3 mins. Bake sweet potato wedges in oven at 200°C for 20 mins. Serve with fresh lemon squeeze.'
-        }
-      ],
-      d: [
-        {
-          id: 'hp-d1',
-          mealType: 'dinner',
-          name: 'Sirloin Steak & Roasted Garlic Green Beans',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.2),
-          fatG: Math.round(targetFat * 0.35),
-          prepTimeMinutes: 20,
-          description: 'Lean sirloin steak pan-seared with rosemary garlic, served with crisp green beans and brown rice.',
-          ingredients: ['180g Lean Sirloin Steak', '120g Green Beans', '100g Brown Rice (cooked)', '1 clove Garlic'],
-          recipe: 'Sear sirloin in hot skillet with minced garlic and rosemary for 3-4 mins per side. Sauté green beans in remaining pan juices and serve over brown rice.'
-        }
-      ],
-      s: [
-        {
-          id: 'hp-s1',
-          mealType: 'snack',
-          name: 'Cottage Cheese & Pineapple Recovery Cup',
-          calories: Math.round(targetCal * 0.13),
-          proteinG: Math.round(targetProt * 0.15),
-          carbsG: Math.round(targetCarb * 0.15),
-          fatG: Math.round(targetFat * 0.1),
-          prepTimeMinutes: 3,
-          description: 'Slow-digesting casein protein from low-fat cottage cheese paired with fresh pineapple chunks.',
-          ingredients: ['150g Low-fat Cottage Cheese', '80g Pineapple chunks'],
-          recipe: 'Combine cottage cheese and fresh pineapple chunks in a glass bowl. Enjoy immediately as an afternoon snack.'
-        }
-      ]
-    },
-    keto: {
-      b: [
-        {
-          id: 'k-b1',
-          mealType: 'breakfast',
-          name: 'Avocado, Bacon & Cheddar Omelette',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.25),
-          carbsG: Math.round(targetCarb * 0.08),
-          fatG: Math.round(targetFat * 0.4),
+          proteinG: Math.round(targetProt * 0.28),
+          carbsG: Math.round(targetCarb * 0.22),
+          fatG: Math.round(targetFat * 0.24),
           prepTimeMinutes: 12,
-          description: 'Rich 3-egg omelette stuffed with melted sharp cheddar, crispy bacon bits, and sliced avocado.',
-          ingredients: ['3 Large Eggs', '2 slices Crisp Bacon', '30g Sharp Cheddar', '1/2 Medium Avocado', '1 tbsp Butter'],
-          recipe: 'Melt butter in pan. Pour beaten eggs. When set, fill one side with cheddar, bacon, and avocado slices. Fold over and serve piping hot.'
+          glycemicIndex: 'low',
+          description: 'Savory oats & moong dal pancakes stuffed with spiced low-fat paneer and homemade mint cilantro chutney.',
+          ingredients: ['100g Low-fat Paneer', '50g Oats Flour', '30g Yellow Moong Dal', '1 tbsp Mint Chutney', 'Spices & Green Chili'],
+          recipe: 'Blend oats flour and soaked moong dal with water to form batter. Pour onto non-stick tawa. Crumble paneer inside with spices and fold like a crepe.',
+          swapAlternatives: [
+            { name: 'Egg Bhurji with Whole Wheat Toast', calories: Math.round(targetCal * 0.25), proteinG: Math.round(targetProt * 0.28), carbsG: Math.round(targetCarb * 0.2), fatG: Math.round(targetFat * 0.25), ingredients: ['3 Eggs', '1 Onion', '1 Tomato', '2 Toast'] },
+            { name: 'Soya Chunk & Vegetable Upma', calories: Math.round(targetCal * 0.25), proteinG: Math.round(targetProt * 0.27), carbsG: Math.round(targetCarb * 0.25), fatG: Math.round(targetFat * 0.2), ingredients: ['40g Soya Chunks', '40g Rava', 'Peas & Mustard seeds'] }
+          ]
         }
       ],
       l: [
         {
-          id: 'k-l1',
+          id: 'ind-l1',
           mealType: 'lunch',
-          name: 'Keto Chicken Caesar Salad Bowl',
-          calories: Math.round(targetCal * 0.35),
-          proteinG: Math.round(targetProt * 0.35),
-          carbsG: Math.round(targetCarb * 0.08),
-          fatG: Math.round(targetFat * 0.4),
-          prepTimeMinutes: 15,
-          description: 'Crisp romaine lettuce topped with grilled chicken thigh, parmesan shavings, and avocado oil Caesar dressing.',
-          ingredients: ['180g Grilled Chicken Thigh', '2 cups Romaine Lettuce', '25g Parmesan Cheese', '2 tbsp Avocado Oil Caesar'],
-          recipe: 'Toss romaine lettuce with Caesar dressing and parmesan. Slice warm grilled chicken thigh over greens.'
+          name: 'Tandoori Chicken Tikka & Dal Tadka with Brown Basmati',
+          cuisine: 'indian',
+          calories: Math.round(targetCal * 0.33),
+          proteinG: Math.round(targetProt * 0.36),
+          carbsG: Math.round(targetCarb * 0.32),
+          fatG: Math.round(targetFat * 0.26),
+          prepTimeMinutes: 22,
+          glycemicIndex: 'low',
+          description: 'Marinated roasted chicken breast skewers served with protein-rich yellow dal tadka and aromatic brown basmati rice.',
+          ingredients: ['200g Chicken Breast', '100g Yellow Toor Dal (cooked)', '100g Brown Basmati Rice (cooked)', '2 tbsp Greek Yogurt marinade'],
+          recipe: 'Marinate chicken in yogurt, garlic, ginger, and garam masala. Air-fry or grill at 200°C for 15 mins. Serve alongside warm yellow dal tadka and brown basmati rice.',
+          swapAlternatives: [
+            { name: 'Paneer Butter Masala (Light) & Multigrain Roti', calories: Math.round(targetCal * 0.33), proteinG: Math.round(targetProt * 0.32), carbsG: Math.round(targetCarb * 0.35), fatG: Math.round(targetFat * 0.3), ingredients: ['150g Paneer', '2 Multigrain Rotis', 'Tomato Cashew Sauce'] },
+            { name: 'Fish Curry with Red Rice & Cucumber Salad', calories: Math.round(targetCal * 0.33), proteinG: Math.round(targetProt * 0.35), carbsG: Math.round(targetCarb * 0.3), fatG: Math.round(targetFat * 0.24), ingredients: ['180g White Fish', '100g Red Rice', 'Coconut Curry'] }
+          ]
         }
       ],
       d: [
         {
-          id: 'k-d1',
+          id: 'ind-d1',
           mealType: 'dinner',
-          name: 'Butter-Poached Salmon & Zucchini Ribbons',
-          calories: Math.round(targetCal * 0.25),
+          name: 'Kadhai Tofu & Palak Saag with Missi Roti',
+          cuisine: 'indian',
+          calories: Math.round(targetCal * 0.28),
           proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.08),
-          fatG: Math.round(targetFat * 0.35),
-          prepTimeMinutes: 18,
-          description: 'Rich salmon fillet poached in herb butter served alongside garlic sauteed zucchini ribbons.',
-          ingredients: ['180g Salmon Fillet', '2 tbsp Grass-fed Butter', '1 Medium Zucchini', '1 clove Garlic'],
-          recipe: 'Spiralize zucchini. Gently poach salmon in melted butter over low heat for 8 mins. Sauté zucchini with garlic for 2 mins.'
-        }
-      ],
-      s: [
-        {
-          id: 'k-s1',
-          mealType: 'snack',
-          name: 'Keto Macadamia & Pecan Fuel Mix',
-          calories: Math.round(targetCal * 0.1),
-          proteinG: Math.round(targetProt * 0.1),
-          carbsG: Math.round(targetCarb * 0.05),
-          fatG: Math.round(targetFat * 0.15),
-          prepTimeMinutes: 1,
-          description: 'Raw macadamia nuts and pecans providing healthy monounsaturated fats.',
-          ingredients: ['20g Macadamia Nuts', '15g Raw Pecan halves'],
-          recipe: 'Portion raw macadamia nuts and pecans into a snack pouch for quick keto energy.'
-        }
-      ]
-    },
-    balanced: {
-      b: [
-        {
-          id: 'bal-b1',
-          mealType: 'breakfast',
-          name: 'Avocado Toast & Poached Organic Eggs',
-          calories: Math.round(targetCal * 0.25),
-          proteinG: Math.round(targetProt * 0.25),
-          carbsG: Math.round(targetCarb * 0.25),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 10,
-          description: 'Whole grain sourdough topped with mashed avocado, chili flakes, and 2 poached organic eggs.',
-          ingredients: ['2 slices Whole Grain Sourdough', '1/2 Hass Avocado', '2 Organic Eggs', 'Chili flakes & sea salt'],
-          recipe: 'Toast sourdough. Mash avocado with lemon juice and salt. Poach eggs in simmering water for 3 mins. Layer mashed avocado and top with poached eggs.'
-        }
-      ],
-      l: [
-        {
-          id: 'bal-l1',
-          mealType: 'lunch',
-          name: 'Turkey & Hummus Whole Wheat Wrap',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.3),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 8,
-          description: 'Sliced roast turkey breast, roasted red pepper hummus, cucumber, and spinach inside a whole wheat tortilla.',
-          ingredients: ['1 Large Whole Wheat Tortilla', '120g Roasted Turkey Slices', '2 tbsp Garlic Hummus', 'Cucumber & Spinach'],
-          recipe: 'Spread hummus over tortilla. Layer turkey slices, cucumber strips, and spinach. Wrap tightly and slice diagonally.'
-        }
-      ],
-      d: [
-        {
-          id: 'bal-d1',
-          mealType: 'dinner',
-          name: 'Lean Herb Turkey Meatballs & Marinara Quinoa',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.3),
-          fatG: Math.round(targetFat * 0.3),
-          prepTimeMinutes: 25,
-          description: 'Oven-baked turkey meatballs in organic marinara sauce served over a bed of fluffy quinoa.',
-          ingredients: ['180g Lean Ground Turkey', '1/2 cup Marinara Sauce', '100g Quinoa (cooked)', 'Fresh Basil'],
-          recipe: 'Form turkey into balls and bake at 200°C for 15 mins. Simmer in marinara sauce for 5 mins and serve over warm quinoa.'
-        }
-      ],
-      s: [
-        {
-          id: 'bal-s1',
-          mealType: 'snack',
-          name: 'Apple Slices with Natural Peanut Butter',
-          calories: Math.round(targetCal * 0.15),
-          proteinG: Math.round(targetProt * 0.15),
-          carbsG: Math.round(targetCarb * 0.15),
-          fatG: Math.round(targetFat * 0.2),
-          prepTimeMinutes: 3,
-          description: 'Crisp Honeycrisp apple slices dipped in 100% natural peanut butter.',
-          ingredients: ['1 Medium Honeycrisp Apple', '2 tbsp Natural Peanut Butter'],
-          recipe: 'Slice apple into 8 wedges. Dip into creamy natural peanut butter.'
-        }
-      ]
-    },
-    low_carb: {
-      b: [
-        {
-          id: 'lc-b1',
-          mealType: 'breakfast',
-          name: 'Spinach & Mushroom Egg White Frittata',
-          calories: Math.round(targetCal * 0.22),
-          proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.1),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 15,
-          description: 'Baked egg white frittata loaded with fresh baby spinach, cremini mushrooms, and feta cheese.',
-          ingredients: ['5 Egg Whites', '1 Whole Egg', '50g Baby Spinach', '40g Mushrooms', '20g Feta Cheese'],
-          recipe: 'Sauté mushrooms and spinach. Pour whisked egg whites and 1 whole egg into pan. Top with feta cheese and bake at 180°C for 12 mins.'
-        }
-      ],
-      l: [
-        {
-          id: 'lc-l1',
-          mealType: 'lunch',
-          name: 'Grilled Beef Patty Lettuce Wraps',
-          calories: Math.round(targetCal * 0.35),
-          proteinG: Math.round(targetProt * 0.35),
-          carbsG: Math.round(targetCarb * 0.1),
-          fatG: Math.round(targetFat * 0.35),
-          prepTimeMinutes: 15,
-          description: 'Two lean grass-fed beef patties wrapped in crisp iceberg lettuce leaves with tomato, onion, and mustard.',
-          ingredients: ['200g Lean Ground Beef (90/10)', '4 Large Iceberg Lettuce leaves', 'Tomato slices', 'Dijon Mustard'],
-          recipe: 'Grill patties 4 mins per side. Wrap each patty in crisp iceberg lettuce leaves with tomato slices and Dijon mustard.'
-        }
-      ],
-      d: [
-        {
-          id: 'lc-d1',
-          mealType: 'dinner',
-          name: 'Lemon Herb Baked Cod & Cauliflower Mash',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.3),
-          carbsG: Math.round(targetCarb * 0.12),
+          carbsG: Math.round(targetCarb * 0.28),
           fatG: Math.round(targetFat * 0.25),
           prepTimeMinutes: 20,
-          description: 'Flaky white cod fillet baked with herbs and olive oil, served alongside creamy garlic cauliflower mash.',
-          ingredients: ['200g Wild Cod Fillet', '200g Cauliflower florets', '1 tbsp Olive Oil', 'Lemon & Dill'],
-          recipe: 'Bake cod with olive oil, lemon, and dill at 200°C for 12 mins. Steam cauliflower and mash with garlic and salt.'
+          glycemicIndex: 'low',
+          description: 'High-protein tofu cubes cooked in spiced spinach purée (Palak) served with high-fiber chickpea flour Missi Roti.',
+          ingredients: ['180g Organic Tofu', '150g Fresh Spinach', '1 Missi Roti (Besan + Wheat)', '1 tsp Ghee'],
+          recipe: 'Blanch and purée spinach with garlic and chili. Sauté tofu cubes with spices and fold into hot spinach purée. Serve with freshly toasted missi roti.'
         }
       ],
       s: [
         {
-          id: 'lc-s1',
+          id: 'ind-s1',
           mealType: 'snack',
-          name: 'Celery Sticks with Almond Butter',
-          calories: Math.round(targetCal * 0.13),
-          proteinG: Math.round(targetProt * 0.1),
-          carbsG: Math.round(targetCarb * 0.08),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 2,
-          description: 'Crispy crunchy celery stalks filled with creamy raw almond butter.',
-          ingredients: ['3 Celery Stalks', '1.5 tbsp Raw Almond Butter'],
-          recipe: 'Wash celery stalks and spread raw almond butter down the center channel.'
+          name: 'Roasted Masala Makhana & Sprouted Moong Chaat',
+          cuisine: 'indian',
+          calories: Math.round(targetCal * 0.14),
+          proteinG: Math.round(targetProt * 0.16),
+          carbsG: Math.round(targetCarb * 0.18),
+          fatG: Math.round(targetFat * 0.1),
+          prepTimeMinutes: 5,
+          glycemicIndex: 'low',
+          description: 'Crunchy ghee-roasted foxnuts (Makhana) mixed with sprouted green moong, lemon juice, and chaat masala.',
+          ingredients: ['25g Makhana', '60g Sprouted Moong', 'Lemon juice & Chaat Masala'],
+          recipe: 'Dry roast Makhana in pan until crisp. Toss with sprouted moong, diced cucumber, lemon juice, and chaat masala.'
         }
       ]
     },
+
+    asian: {
+      b: [
+        {
+          id: 'asia-b1',
+          mealType: 'breakfast',
+          name: 'Korean Steamed Egg Pot (Gyeran-찜) & Kimchi Toast',
+          cuisine: 'asian',
+          calories: Math.round(targetCal * 0.24),
+          proteinG: Math.round(targetProt * 0.28),
+          carbsG: Math.round(targetCarb * 0.2),
+          fatG: Math.round(targetFat * 0.24),
+          prepTimeMinutes: 10,
+          glycemicIndex: 'low',
+          description: 'Silken Korean dashi steamed egg soufflé served with probiotic kimchi on toasted sourdough.',
+          ingredients: ['3 Eggs', '100ml Dashi Broth', '40g Kimchi', '1 slice Sourdough Toast'],
+          recipe: 'Whisk eggs with dashi broth and scallions. Steam over medium heat for 8 mins until soufflé puffs. Serve with spicy probiotic kimchi.'
+        }
+      ],
+      l: [
+        {
+          id: 'asia-l1',
+          mealType: 'lunch',
+          name: 'Teriyaki Chicken breast & Edamame Soba Noodles',
+          cuisine: 'asian',
+          calories: Math.round(targetCal * 0.34),
+          proteinG: Math.round(targetProt * 0.36),
+          carbsG: Math.round(targetCarb * 0.35),
+          fatG: Math.round(targetFat * 0.2),
+          prepTimeMinutes: 18,
+          glycemicIndex: 'low',
+          description: 'Glueless 100% buckwheat Soba noodles tossed with grilled teriyaki chicken breast, edamame, and sesame seeds.',
+          ingredients: ['200g Chicken Breast', '70g Buckwheat Soba (dry)', '50g Edamame', 'Low-sodium Teriyaki Sauce'],
+          recipe: 'Boil buckwheat soba noodles for 5 mins. Pan-fry sliced chicken breast with teriyaki sauce and toss together with shelled edamame.'
+        }
+      ],
+      d: [
+        {
+          id: 'asia-d1',
+          mealType: 'dinner',
+          name: 'Miso Glazed Wild Cod & Stir-fry Bok Choy',
+          cuisine: 'asian',
+          calories: Math.round(targetCal * 0.28),
+          proteinG: Math.round(targetProt * 0.32),
+          carbsG: Math.round(targetCarb * 0.22),
+          fatG: Math.round(targetFat * 0.22),
+          prepTimeMinutes: 15,
+          glycemicIndex: 'low',
+          description: 'Flaky cod fillet brushed with sweet red miso glaze, served alongside garlic wok-tossed baby bok choy and shiitake mushrooms.',
+          ingredients: ['190g Wild Cod Fillet', '1 tbsp Red Miso Paste', '150g Baby Bok Choy', '50g Shiitake Mushrooms'],
+          recipe: 'Brush cod with miso, mirin, and soy sauce. Broil in oven for 8 mins. Flash wok stir-fry bok choy and shiitake with garlic and sesame oil.'
+        }
+      ],
+      s: [
+        {
+          id: 'asia-s1',
+          mealType: 'snack',
+          name: 'Steamed Spicy Garlic Sea Salt Edamame',
+          cuisine: 'asian',
+          calories: Math.round(targetCal * 0.14),
+          proteinG: Math.round(targetProt * 0.15),
+          carbsG: Math.round(targetCarb * 0.1),
+          fatG: Math.round(targetFat * 0.1),
+          prepTimeMinutes: 5,
+          glycemicIndex: 'low',
+          description: 'Warm steamed edamame pods tossed in chili oil, garlic, and coarse sea salt.',
+          ingredients: ['160g Edamame Pods', '1 tsp Chili Garlic Oil', 'Sea Salt'],
+          recipe: 'Steam edamame pods for 4 mins. Drain and toss with chili garlic oil and coarse sea salt.'
+        }
+      ]
+    },
+
     mediterranean: {
       b: [
         {
           id: 'med-b1',
           mealType: 'breakfast',
-          name: 'Greek Shakshuka with Feta & Crusty Bread',
+          name: 'Greek Shakshuka with Crumbled Feta & Olive Toast',
+          cuisine: 'mediterranean',
           calories: Math.round(targetCal * 0.25),
-          proteinG: Math.round(targetProt * 0.25),
-          carbsG: Math.round(targetCarb * 0.25),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 20,
-          description: 'Eggs poached in a rich spiced tomato, bell pepper, and garlic sauce topped with crumbled feta cheese.',
-          ingredients: ['2 Eggs', '150g Diced Tomatoes', '1/2 Red Bell Pepper', '20g Feta Cheese', '1 slice Whole Grain Bread'],
-          recipe: 'Simmer bell pepper and diced tomatoes with cumin and garlic. Make 2 wells, crack eggs inside, cover pan for 5 mins until whites set. Top with feta.'
+          proteinG: Math.round(targetProt * 0.26),
+          carbsG: Math.round(targetCarb * 0.24),
+          fatG: Math.round(targetFat * 0.26),
+          prepTimeMinutes: 15,
+          glycemicIndex: 'low',
+          description: 'Eggs poached in rich spiced tomato and red pepper reduction, topped with creamy sheep feta cheese.',
+          ingredients: ['2 Eggs', '150g Diced Tomatoes', '1/2 Red Bell Pepper', '25g Feta Cheese', '1 slice Whole Grain Toast'],
+          recipe: 'Simmer peppers and tomatoes with garlic and oregano. Crack eggs into wells, cover pan for 5 mins. Top with crumbled feta.'
         }
       ],
       l: [
         {
           id: 'med-l1',
           mealType: 'lunch',
-          name: 'Mediterranean Tuna & Chickpea Grain Salad',
-          calories: Math.round(targetCal * 0.32),
-          proteinG: Math.round(targetProt * 0.35),
+          name: 'Mediterranean Grilled Salmon & Lemon Chickpea Grain Bowl',
+          cuisine: 'mediterranean',
+          calories: Math.round(targetCal * 0.33),
+          proteinG: Math.round(targetProt * 0.34),
           carbsG: Math.round(targetCarb * 0.3),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 10,
-          description: 'Flaked albacore tuna, chickpeas, kalamata olives, cherry tomatoes, and extra virgin olive oil.',
-          ingredients: ['150g Albacore Tuna in Olive Oil', '100g Chickpeas', '30g Kalamata Olives', 'Cherry Tomatoes', 'EVOO Dressing'],
-          recipe: 'Toss flaked tuna, drained chickpeas, halved cherry tomatoes, and kalamata olives with extra virgin olive oil and oregano.'
+          fatG: Math.round(targetFat * 0.3),
+          prepTimeMinutes: 20,
+          glycemicIndex: 'low',
+          description: 'Wild salmon fillet rich in omega-3s served over marinated lemon chickpeas, cucumbers, and kalamata olives.',
+          ingredients: ['180g Salmon Fillet', '100g Chickpeas', '30g Kalamata Olives', '1 tbsp Extra Virgin Olive Oil'],
+          recipe: 'Sear salmon skin-side down for 4 mins, flip for 3 mins. Combine chickpeas, cucumber, olives, and extra virgin olive oil.'
         }
       ],
       d: [
         {
           id: 'med-d1',
           mealType: 'dinner',
-          name: 'Baked Sea Bass with Roasted Vegetables & Couscous',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.28),
-          carbsG: Math.round(targetCarb * 0.3),
-          fatG: Math.round(targetFat * 0.3),
-          prepTimeMinutes: 25,
-          description: 'Tender Mediterranean sea bass fillet roasted with zucchini, red onion, and served over whole wheat couscous.',
-          ingredients: ['180g Sea Bass Fillet', '100g Roasted Zucchini & Red Onion', '80g Whole Wheat Couscous (cooked)', '1 tbsp EVOO'],
-          recipe: 'Drizzle fish and vegetables with extra virgin olive oil and roast at 200°C for 15 mins. Serve over warm fluffy couscous.'
+          name: 'Herbed Greek Chicken Souvlaki & Quinoa Tzatziki',
+          cuisine: 'mediterranean',
+          calories: Math.round(targetCal * 0.28),
+          proteinG: Math.round(targetProt * 0.32),
+          carbsG: Math.round(targetCarb * 0.28),
+          fatG: Math.round(targetFat * 0.24),
+          prepTimeMinutes: 20,
+          glycemicIndex: 'low',
+          description: 'Oregano lemon marinated chicken breast skewers served over warm fluffy quinoa and homemade cucumber tzatziki.',
+          ingredients: ['200g Chicken Breast', '80g Quinoa (cooked)', '3 tbsp Greek Yogurt Tzatziki', '1/2 Cucumber'],
+          recipe: 'Grill lemon oregano chicken skewers for 10 mins. Serve over cooked quinoa with cucumber tzatziki sauce.'
         }
       ],
       s: [
         {
           id: 'med-s1',
           mealType: 'snack',
-          name: 'Walnut & Dried Fig Energy Plate',
-          calories: Math.round(targetCal * 0.13),
-          proteinG: Math.round(targetProt * 0.12),
-          carbsG: Math.round(targetCarb * 0.15),
-          fatG: Math.round(targetFat * 0.2),
-          prepTimeMinutes: 1,
-          description: 'Heart-healthy English walnuts paired with sweet organic dried figs.',
-          ingredients: ['25g English Walnuts', '2 Organic Dried Figs'],
-          recipe: 'Combine walnuts and sliced dried figs for a classic Mediterranean antioxidant snack.'
+          name: 'Greek Yogurt, Walnuts & Organic Honey Cup',
+          cuisine: 'mediterranean',
+          calories: Math.round(targetCal * 0.14),
+          proteinG: Math.round(targetProt * 0.15),
+          carbsG: Math.round(targetCarb * 0.12),
+          fatG: Math.round(targetFat * 0.18),
+          prepTimeMinutes: 2,
+          glycemicIndex: 'low',
+          description: 'Strained 0% Greek yogurt layered with raw English walnuts and organic wildflower honey.',
+          ingredients: ['180g Greek Yogurt', '20g Raw Walnuts', '10g Wildflower Honey'],
+          recipe: 'Spoon Greek yogurt into bowl. Top with crushed walnuts and drizzle organic wildflower honey.'
         }
       ]
     },
-    vegan: {
+
+    mexican: {
       b: [
         {
-          id: 'v-b1',
+          id: 'mex-b1',
           mealType: 'breakfast',
-          name: 'Tofu Scramble & Avocado Breakfast Bowl',
-          calories: Math.round(targetCal * 0.25),
+          name: 'High-Protein Huevos Rancheros Bowl',
+          cuisine: 'mexican',
+          calories: Math.round(targetCal * 0.26),
           proteinG: Math.round(targetProt * 0.28),
-          carbsG: Math.round(targetCarb * 0.22),
-          fatG: Math.round(targetFat * 0.25),
+          carbsG: Math.round(targetCarb * 0.24),
+          fatG: Math.round(targetFat * 0.26),
           prepTimeMinutes: 12,
-          description: 'Crumbled organic firm tofu sautéed with turmeric, nutritional yeast, kale, and sliced avocado.',
-          ingredients: ['180g Firm Tofu', '1 tbsp Nutritional Yeast', '1/2 tsp Turmeric', '50g Kale', '1/2 Avocado'],
-          recipe: 'Crumble tofu into skillet. Sauté with turmeric, nutritional yeast, and kale for 6 mins. Top with sliced avocado.'
+          glycemicIndex: 'low',
+          description: 'Crisp corn tortilla layered with warm black beans, 2 sunny-side eggs, fresh pico de gallo, and avocado.',
+          ingredients: ['2 Eggs', '80g Black Beans', '1 Corn Tortilla', '40g Fresh Salsa', '1/4 Hass Avocado'],
+          recipe: 'Warm black beans with cumin. Fry eggs over easy. Layer tortilla with beans, eggs, fresh pico de gallo, and avocado slices.'
         }
       ],
       l: [
         {
-          id: 'v-l1',
+          id: 'mex-l1',
           mealType: 'lunch',
-          name: 'Lentil & Sweet Potato Buddha Bowl',
-          calories: Math.round(targetCal * 0.32),
-          proteinG: Math.round(targetProt * 0.32),
-          carbsG: Math.round(targetCarb * 0.38),
-          fatG: Math.round(targetFat * 0.2),
+          name: 'Carne Asada Steak & Brown Rice Burrito Bowl',
+          cuisine: 'mexican',
+          calories: Math.round(targetCal * 0.35),
+          proteinG: Math.round(targetProt * 0.38),
+          carbsG: Math.round(targetCarb * 0.32),
+          fatG: Math.round(targetFat * 0.28),
           prepTimeMinutes: 20,
-          description: 'Protein-packed brown lentils, roasted sweet potato, edamame, and tahini lemon dressing.',
-          ingredients: ['120g Brown Lentils (cooked)', '120g Roasted Sweet Potato', '50g Edamame', '1.5 tbsp Tahini Dressing'],
-          recipe: 'Assemble cooked lentils, roasted sweet potato cubes, and steamed edamame in a bowl. Drizzle with creamy tahini dressing.'
+          glycemicIndex: 'low',
+          description: 'Flank steak marinated in lime and cilantro, served with brown rice, pinto beans, grilled fajita peppers, and salsa verde.',
+          ingredients: ['190g Flank Steak', '100g Brown Rice (cooked)', '60g Pinto Beans', 'Fajita Peppers & Salsa'],
+          recipe: 'Sear flank steak over high heat for 3 mins per side. Slice against grain and serve over rice, beans, and sauteed peppers.'
         }
       ],
       d: [
         {
-          id: 'v-d1',
+          id: 'mex-d1',
           mealType: 'dinner',
-          name: 'Chickpea & Spinach Coconut Curry with Jasmine Rice',
-          calories: Math.round(targetCal * 0.3),
-          proteinG: Math.round(targetProt * 0.25),
-          carbsG: Math.round(targetCarb * 0.35),
-          fatG: Math.round(targetFat * 0.3),
-          prepTimeMinutes: 25,
-          description: 'Chickpeas and spinach simmered in a fragrant coconut curry sauce over fluffy jasmine rice.',
-          ingredients: ['150g Chickpeas', '100g Coconut Milk (light)', '50g Baby Spinach', '100g Jasmine Rice (cooked)', '1 tbsp Curry Paste'],
-          recipe: 'Sauté curry paste. Add coconut milk and chickpeas, simmer 10 mins. Stir in spinach until wilted and serve over jasmine rice.'
+          name: 'Grilled Shrimp Tacos with Spicy Cabbage Slaw',
+          cuisine: 'mexican',
+          calories: Math.round(targetCal * 0.26),
+          proteinG: Math.round(targetProt * 0.28),
+          carbsG: Math.round(targetCarb * 0.24),
+          fatG: Math.round(targetFat * 0.22),
+          prepTimeMinutes: 15,
+          glycemicIndex: 'low',
+          description: 'Chili-lime seasoned wild shrimp stuffed into warm corn tortillas with lime-zested purple cabbage slaw.',
+          ingredients: ['180g Wild Jumbo Shrimp', '2 Corn Tortillas', '80g Purple Cabbage Slaw', 'Lime & Cilantro'],
+          recipe: 'Sauté spiced shrimp for 3 mins. Warm corn tortillas and stuff with shrimp, lime cabbage slaw, and fresh cilantro.'
         }
       ],
       s: [
         {
-          id: 'v-s1',
+          id: 'mex-s1',
           mealType: 'snack',
-          name: 'Edamame Pods with Sea Salt',
+          name: 'Chili-Lime Roasted Pumpkin Seeds (Pepitas)',
+          cuisine: 'mexican',
           calories: Math.round(targetCal * 0.13),
-          proteinG: Math.round(targetProt * 0.15),
-          carbsG: Math.round(targetCarb * 0.1),
-          fatG: Math.round(targetFat * 0.1),
-          prepTimeMinutes: 5,
-          description: 'Steamed green edamame pods sprinkled with coarse sea salt.',
-          ingredients: ['150g Edamame in pods', 'Coarse Sea Salt'],
-          recipe: 'Steam edamame pods for 4 mins. Drain, sprinkle with coarse sea salt, and pop seeds directly into mouth.'
+          proteinG: Math.round(targetProt * 0.12),
+          carbsG: Math.round(targetCarb * 0.08),
+          fatG: Math.round(targetFat * 0.16),
+          prepTimeMinutes: 3,
+          glycemicIndex: 'low',
+          description: 'Crunchy oven-roasted pumpkin seeds seasoned with Tajin chili-lime seasoning.',
+          ingredients: ['30g Raw Pumpkin Seeds', 'Tajin seasoning & Lime zest'],
+          recipe: 'Roast pumpkin seeds withTajin seasoning until toasted and fragrant.'
         }
       ]
     },
-    intermittent_fasting: {
+
+    western: {
       b: [
         {
-          id: 'if-b1',
+          id: 'west-b1',
           mealType: 'breakfast',
-          name: 'Fasting Window Break: Avocado & Egg Protein Feast',
-          calories: Math.round(targetCal * 0.35),
-          proteinG: Math.round(targetProt * 0.38),
-          carbsG: Math.round(targetCarb * 0.25),
-          fatG: Math.round(targetFat * 0.35),
-          prepTimeMinutes: 12,
-          description: 'First meal of the 8-hour window: 4 eggs, avocado, and toasted sourdough to gently restore glycogen and amino acid levels.',
-          ingredients: ['4 Eggs (Scrambled)', '1 Whole Avocado', '2 slices Toast', 'Cherry Tomatoes'],
-          recipe: 'Scramble 4 eggs in butter. Serve alongside sliced avocado, toasted sourdough, and fresh cherry tomatoes.'
+          name: 'Egg White & Avocado Protein Power Toast',
+          cuisine: 'western',
+          calories: Math.round(targetCal * 0.25),
+          proteinG: Math.round(targetProt * 0.3),
+          carbsG: Math.round(targetCarb * 0.2),
+          fatG: Math.round(targetFat * 0.2),
+          prepTimeMinutes: 10,
+          glycemicIndex: 'low',
+          description: 'Whole grain sourdough topped with mashed Hass avocado, red pepper flakes, and 4 scrambled egg whites.',
+          ingredients: ['4 Egg Whites', '1 slice Whole Grain Sourdough', '1/2 Hass Avocado', 'Chili Flakes'],
+          recipe: 'Toast sourdough bread. Mash avocado with lemon juice. Scramble egg whites and layer on top of toast with chili flakes.'
         }
       ],
       l: [
         {
-          id: 'if-l1',
+          id: 'west-l1',
           mealType: 'lunch',
-          name: 'Mid-Window Power Plate: Grilled Steak & Rice',
-          calories: Math.round(targetCal * 0.45),
-          proteinG: Math.round(targetProt * 0.45),
-          carbsG: Math.round(targetCarb * 0.45),
-          fatG: Math.round(targetFat * 0.4),
-          prepTimeMinutes: 20,
-          description: 'Substantial high-protein, high-carb meal midway through eating window to fuel metabolic rate and muscle repair.',
-          ingredients: ['220g Lean Steak', '150g Brown Rice (cooked)', '150g Steamed Broccoli', '1 tbsp Olive Oil'],
-          recipe: 'Grill steak to medium-rare. Serve with warm brown rice and steamed broccoli drizzled with olive oil.'
+          name: 'Grilled Herb Chicken & Quinoa Energy Bowl',
+          cuisine: 'western',
+          calories: Math.round(targetCal * 0.34),
+          proteinG: Math.round(targetProt * 0.36),
+          carbsG: Math.round(targetCarb * 0.34),
+          fatG: Math.round(targetFat * 0.24),
+          prepTimeMinutes: 18,
+          glycemicIndex: 'low',
+          description: 'Rosemary garlic seasoned chicken breast grilled to perfection, served with quinoa and steamed broccoli.',
+          ingredients: ['200g Chicken Breast', '80g Quinoa (cooked)', '150g Broccoli florets', '1 tsp Olive Oil'],
+          recipe: 'Grill seasoned chicken breast for 6 mins per side. Serve over cooked quinoa with steamed broccoli.'
         }
       ],
       d: [
         {
-          id: 'if-d1',
+          id: 'west-d1',
           mealType: 'dinner',
-          name: 'Window Closer: Salmon & Greek Yogurt Bowl',
-          calories: Math.round(targetCal * 0.2),
-          proteinG: Math.round(targetProt * 0.17),
-          carbsG: Math.round(targetCarb * 0.1),
-          fatG: Math.round(targetFat * 0.25),
-          prepTimeMinutes: 10,
-          description: 'Final meal eaten right before starting the 16-hour fast. Rich in slow-digesting protein and healthy fats.',
-          ingredients: ['150g Baked Salmon', '150g Greek Yogurt', 'Handful of Berries'],
-          recipe: 'Bake salmon fillet. Follow with a small bowl of Greek yogurt topped with berries right before initiating fast.'
+          name: 'Sirloin Steak & Roasted Garlic Green Beans',
+          cuisine: 'western',
+          calories: Math.round(targetCal * 0.28),
+          proteinG: Math.round(targetProt * 0.3),
+          carbsG: Math.round(targetCarb * 0.2),
+          fatG: Math.round(targetFat * 0.32),
+          prepTimeMinutes: 20,
+          glycemicIndex: 'low',
+          description: 'Pan-seared lean sirloin steak with garlic butter, served with crisp green beans and baked sweet potato.',
+          ingredients: ['180g Sirloin Steak', '120g Green Beans', '120g Roasted Sweet Potato', '1 clove Garlic'],
+          recipe: 'Sear sirloin in skillet with garlic for 3 mins per side. Sauté green beans in remaining pan juices.'
         }
       ],
+      s: [
+        {
+          id: 'west-s1',
+          mealType: 'snack',
+          name: 'Cottage Cheese & Pineapple Recovery Bowl',
+          cuisine: 'western',
+          calories: Math.round(targetCal * 0.13),
+          proteinG: Math.round(targetProt * 0.15),
+          carbsG: Math.round(targetCarb * 0.12),
+          fatG: Math.round(targetFat * 0.1),
+          prepTimeMinutes: 2,
+          glycemicIndex: 'low',
+          description: 'Slow-digesting casein protein from low-fat cottage cheese paired with fresh pineapple chunks.',
+          ingredients: ['160g Low-fat Cottage Cheese', '80g Pineapple Chunks'],
+          recipe: 'Combine cottage cheese and fresh pineapple chunks in a bowl.'
+        }
+      ]
+    },
+
+    all: {
+      b: [],
+      l: [],
+      d: [],
       s: []
     }
   };
 
-  const templates = mealTemplates[selectedDiet] || mealTemplates.balanced;
+  // Populate 'all' by combining database
+  cuisineMealDatabase.all.b = [
+    ...cuisineMealDatabase.indian.b,
+    ...cuisineMealDatabase.asian.b,
+    ...cuisineMealDatabase.mediterranean.b,
+    ...cuisineMealDatabase.mexican.b,
+    ...cuisineMealDatabase.western.b
+  ];
+  cuisineMealDatabase.all.l = [
+    ...cuisineMealDatabase.indian.l,
+    ...cuisineMealDatabase.asian.l,
+    ...cuisineMealDatabase.mediterranean.l,
+    ...cuisineMealDatabase.mexican.l,
+    ...cuisineMealDatabase.western.l
+  ];
+  cuisineMealDatabase.all.d = [
+    ...cuisineMealDatabase.indian.d,
+    ...cuisineMealDatabase.asian.d,
+    ...cuisineMealDatabase.mediterranean.d,
+    ...cuisineMealDatabase.mexican.d,
+    ...cuisineMealDatabase.western.d
+  ];
+  cuisineMealDatabase.all.s = [
+    ...cuisineMealDatabase.indian.s,
+    ...cuisineMealDatabase.asian.s,
+    ...cuisineMealDatabase.mediterranean.s,
+    ...cuisineMealDatabase.mexican.s,
+    ...cuisineMealDatabase.western.s
+  ];
+
+  const currentDatabase = (selectedCuisine !== 'all' && cuisineMealDatabase[selectedCuisine]) 
+    ? cuisineMealDatabase[selectedCuisine] 
+    : cuisineMealDatabase.all;
+
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const days: DayDietPlan[] = dayNames.map((dayName, idx) => {
-    // Pick meal variants
-    const bMeal = templates.b[idx % templates.b.length];
-    const lMeal = templates.l[idx % templates.l.length];
-    const dMeal = templates.d[idx % templates.d.length];
-    const sMeal = templates.s.length > 0 ? templates.s[idx % templates.s.length] : null;
+    const bMeal = currentDatabase.b[idx % currentDatabase.b.length] || cuisineMealDatabase.western.b[0];
+    const lMeal = currentDatabase.l[idx % currentDatabase.l.length] || cuisineMealDatabase.western.l[0];
+    const dMeal = currentDatabase.d[idx % currentDatabase.d.length] || cuisineMealDatabase.western.d[0];
+    const sMeal = currentDatabase.s[idx % currentDatabase.s.length] || cuisineMealDatabase.western.s[0];
 
     const meals: RecommendedMeal[] = [bMeal, lMeal, dMeal];
     if (sMeal) meals.push(sMeal);
@@ -505,24 +452,47 @@ export const generatePersonalizedDietPlan = (profile: UserProfile): DietPlan => 
     };
   });
 
-  // Consolidate complete shopping list
-  const shoppingSet = new Set<string>();
+  // Categorize grocery list into aisles
+  const produceItems = new Set<string>();
+  const proteinItems = new Set<string>();
+  const pantryItems = new Set<string>();
+  const dairyItems = new Set<string>();
+
   days.forEach(day => {
     day.meals.forEach(m => {
-      m.ingredients.forEach(ing => shoppingSet.add(ing));
+      m.ingredients.forEach(ing => {
+        const lower = ing.toLowerCase();
+        if (lower.includes('chicken') || lower.includes('steak') || lower.includes('salmon') || lower.includes('tofu') || lower.includes('cod') || lower.includes('shrimp') || lower.includes('beef') || lower.includes('tuna') || lower.includes('egg') || lower.includes('turkey')) {
+          proteinItems.add(ing);
+        } else if (lower.includes('spinach') || lower.includes('broccoli') || lower.includes('avocado') || lower.includes('tomato') || lower.includes('cucumber') || lower.includes('lettuce') || lower.includes('cabbage') || lower.includes('lemon') || lower.includes('pineapple') || lower.includes('mint') || lower.includes('kale') || lower.includes('mushroom') || lower.includes('pepper') || lower.includes('bok choy')) {
+          produceItems.add(ing);
+        } else if (lower.includes('paneer') || lower.includes('yogurt') || lower.includes('cheese') || lower.includes('feta') || lower.includes('butter') || lower.includes('cottage')) {
+          dairyItems.add(ing);
+        } else {
+          pantryItems.add(ing);
+        }
+      });
     });
   });
 
+  const shoppingAisles: GroceryAisle[] = [
+    { category: "🥦 Fresh Produce & Green Veggies", items: Array.from(produceItems) },
+    { category: "🍗 Meat, Seafood & Lean Proteins", items: Array.from(proteinItems) },
+    { category: "🧀 Organic Dairy & Cottage Cheese", items: Array.from(dairyItems) },
+    { category: "🌾 Whole Grains, Spices & Pantry", items: Array.from(pantryItems) }
+  ];
+
   return {
-    id: `diet-plan-${selectedDiet}-${profile.goal}`,
-    title: dietTitles[selectedDiet],
+    id: `diet-plan-${selectedDiet}-${selectedCuisine}-${profile.goal}`,
+    title: `${dietTitles[selectedDiet]} (${selectedCuisine.toUpperCase()})`,
     dietType: selectedDiet,
-    description: dietDescriptions[selectedDiet],
+    cuisine: selectedCuisine,
+    description: `Customized 7-day ${selectedCuisine === 'all' ? 'Global' : selectedCuisine.toUpperCase()} culinary protocol calibrated for your ${profile.goal.toUpperCase()} goal (${targetCal} kcal / ${targetProt}g protein). Features instant AI meal swappers and portion scalers.`,
     targetCalories: targetCal,
     targetProtein: targetProt,
     targetCarbs: targetCarb,
     targetFat: targetFat,
     days,
-    shoppingList: Array.from(shoppingSet)
+    shoppingAisles
   };
 };

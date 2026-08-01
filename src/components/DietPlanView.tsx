@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, DailyLog, DietType, RecommendedMeal, DayDietPlan, MealType, FoodItem } from '../types';
+import { UserProfile, DailyLog, DietType, CuisineType, RecommendedMeal, DayDietPlan, MealType, FoodItem } from '../types';
 import { generatePersonalizedDietPlan } from '../data/dietPlanGenerator';
+import { VoiceAiCoach } from './VoiceAiCoach';
 import {
   Sparkles,
   Utensils,
@@ -19,7 +20,12 @@ import {
   Zap,
   Target,
   Share2,
-  Calendar
+  Calendar,
+  Globe,
+  RefreshCw,
+  Sliders,
+  Copy,
+  Users
 } from 'lucide-react';
 
 interface DietPlanViewProps {
@@ -36,6 +42,7 @@ interface DietPlanViewProps {
     addedFat: number
   ) => void;
   onUpgradePrompt: () => void;
+  showToast: (msg: string) => void;
 }
 
 export function DietPlanView({
@@ -43,12 +50,17 @@ export function DietPlanView({
   todayLog,
   onUpdateProfile,
   onLogMeal,
-  onUpgradePrompt
+  onUpgradePrompt,
+  showToast
 }: DietPlanViewProps) {
   const [selectedDayIdx, setSelectedDayIdx] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'schedule' | 'adherence' | 'fasting' | 'shopping'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'voice' | 'adherence' | 'fasting' | 'shopping'>('schedule');
   const [selectedMealRecipe, setSelectedMealRecipe] = useState<RecommendedMeal | null>(null);
+  const [cookingPortionScale, setCookingPortionScale] = useState<number>(1);
   
+  // Custom swapped meals state override per meal ID
+  const [swappedMeals, setSwappedMeals] = useState<Record<string, RecommendedMeal>>({});
+
   // Shopping list item check states
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
 
@@ -119,33 +131,65 @@ export function DietPlanView({
 
   const activeFastingPhase = getFastingPhase(fastingElapsedSeconds);
 
-  // Handle Diet Type Change
+  // Handle Diet & Cuisine Type Change
   const handleDietTypeChange = (newType: DietType) => {
-    onUpdateProfile({
-      ...profile,
-      dietType: newType
-    });
+    onUpdateProfile({ ...profile, dietType: newType });
+    showToast(`Switched diet protocol to ${newType.toUpperCase()}!`);
+  };
+
+  const handleCuisineChange = (newCuisine: CuisineType) => {
+    onUpdateProfile({ ...profile, cuisinePreference: newCuisine });
+    showToast(`Updated cuisine preference to ${newCuisine.toUpperCase()}!`);
+  };
+
+  // Perform AI Meal Swap
+  const handleSwapMealWithAlternative = (meal: RecommendedMeal) => {
+    if (!meal.swapAlternatives || meal.swapAlternatives.length === 0) {
+      showToast("No alternative meal swap available for this item.");
+      return;
+    }
+
+    const nextAlt = meal.swapAlternatives[0];
+    const updatedMeal: RecommendedMeal = {
+      ...meal,
+      name: nextAlt.name,
+      calories: nextAlt.calories,
+      proteinG: nextAlt.proteinG,
+      carbsG: nextAlt.carbsG,
+      fatG: nextAlt.fatG,
+      ingredients: nextAlt.ingredients,
+      description: `AI Swapped Alternative: ${nextAlt.name} with exact macro alignment (${nextAlt.calories} kcal).`
+    };
+
+    setSwappedMeals(prev => ({
+      ...prev,
+      [meal.id]: updatedMeal
+    }));
+
+    showToast(`Swapped meal for ${nextAlt.name}! 🔄`);
   };
 
   // One-click log recommended meal to today's food journal
   const handleQuickLogRecommendedMeal = (meal: RecommendedMeal) => {
+    const activeMeal = swappedMeals[meal.id] || meal;
     onLogMeal(
-      meal.mealType,
-      meal.name,
-      meal.ingredients.map(ing => ({
+      activeMeal.mealType,
+      activeMeal.name,
+      activeMeal.ingredients.map(ing => ({
         name: ing,
         portion: '1 serving',
-        calories: Math.round(meal.calories / meal.ingredients.length),
-        proteinG: Number((meal.proteinG / meal.ingredients.length).toFixed(1)),
-        carbsG: Number((meal.carbsG / meal.ingredients.length).toFixed(1)),
-        fatG: Number((meal.fatG / meal.ingredients.length).toFixed(1)),
+        calories: Math.round(activeMeal.calories / activeMeal.ingredients.length),
+        proteinG: Number((activeMeal.proteinG / activeMeal.ingredients.length).toFixed(1)),
+        carbsG: Number((activeMeal.carbsG / activeMeal.ingredients.length).toFixed(1)),
+        fatG: Number((activeMeal.fatG / activeMeal.ingredients.length).toFixed(1)),
         category: 'AI Recommended Plan'
       })),
-      meal.calories,
-      meal.proteinG,
-      meal.carbsG,
-      meal.fatG
+      activeMeal.calories,
+      activeMeal.proteinG,
+      activeMeal.carbsG,
+      activeMeal.fatG
     );
+    showToast(`Logged ${activeMeal.name} to your food journal! 🥗`);
   };
 
   const dietTypes: { id: DietType; label: string; tag: string }[] = [
@@ -158,15 +202,24 @@ export function DietPlanView({
     { id: 'intermittent_fasting', label: '16:8 Fasting', tag: 'Autophagy' }
   ];
 
+  const cuisines: { id: CuisineType; label: string; flag: string }[] = [
+    { id: 'all', label: 'Global Cuisine', flag: '🌐' },
+    { id: 'indian', label: 'Indian Flavour', flag: '🇮🇳' },
+    { id: 'asian', label: 'Asian & Korean', flag: '🇯🇵' },
+    { id: 'mediterranean', label: 'Mediterranean', flag: '🇬🇷' },
+    { id: 'mexican', label: 'Mexican Fiesta', flag: '🇲🇽' },
+    { id: 'western', label: 'Western Clean', flag: '🇺🇸' }
+  ];
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 select-none" id="component-diet-plan">
-      {/* TOP HEADER & DIET SELECTOR */}
+      {/* TOP HEADER & DIET ARCHITECT SELECTOR */}
       <div className="bg-[#141414] p-6 rounded-3xl border border-neutral-800 space-y-5">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> AI Diet Coach Recommendation
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> AI Culinary Architect
               </span>
               <span className="bg-neutral-800 text-neutral-400 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono">
                 {profile.goal.toUpperCase()} GOAL
@@ -193,29 +246,50 @@ export function DietPlanView({
           </div>
         </div>
 
-        {/* DIET TYPE SELECTION CHIPS */}
+        {/* 1. CUISINE SELECTION ROW */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-t border-neutral-900 pt-3">
+          <span className="text-[10px] text-neutral-500 font-black uppercase tracking-wider whitespace-nowrap mr-1 flex items-center gap-1">
+            <Globe className="w-3.5 h-3.5 text-rose-500" /> Cuisine Profile:
+          </span>
+          {cuisines.map(c => (
+            <button
+              key={c.id}
+              onClick={() => handleCuisineChange(c.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
+                (profile.cuisinePreference || 'all') === c.id
+                  ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.3)]'
+                  : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
+              }`}
+            >
+              <span>{c.flag}</span>
+              <span>{c.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* 2. DIET PROTOCOL SELECTION CHIPS */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-[10px] text-neutral-500 font-black uppercase tracking-wider whitespace-nowrap mr-1">Switch Plan:</span>
+          <span className="text-[10px] text-neutral-500 font-black uppercase tracking-wider whitespace-nowrap mr-1 flex items-center gap-1">
+            <Sliders className="w-3.5 h-3.5 text-blue-500" /> Macro Protocol:
+          </span>
           {dietTypes.map(dt => (
             <button
               key={dt.id}
               onClick={() => handleDietTypeChange(dt.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
                 (profile.dietType || 'high_protein') === dt.id
-                  ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-                  : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-700'
+                  ? 'bg-neutral-800 text-rose-400 border border-rose-500/40'
+                  : 'bg-neutral-900/60 text-neutral-400 hover:text-white border border-neutral-850'
               }`}
             >
               <span>{dt.label}</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
-                (profile.dietType || 'high_protein') === dt.id ? 'bg-black/20 text-white' : 'bg-neutral-800 text-neutral-400'
-              }`}>{dt.tag}</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-neutral-950 text-neutral-500 font-mono">{dt.tag}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* NAVIGATION SUB-TABS */}
+      {/* NAVIGATION SUB-TABS (SINGLE ROW WRAPPED) */}
       <div className="flex items-center justify-between border-b border-neutral-800 pb-3 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
           <button
@@ -230,6 +304,17 @@ export function DietPlanView({
           </button>
 
           <button
+            onClick={() => setActiveTab('voice')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer ${
+              activeTab === 'voice'
+                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" /> AI Voice & Prompt Logger
+          </button>
+
+          <button
             onClick={() => setActiveTab('adherence')}
             className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'adherence'
@@ -237,7 +322,7 @@ export function DietPlanView({
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
             }`}
           >
-            <Target className="w-4 h-4" /> Real-time Adherence ({overallAdherence}%)
+            <Target className="w-4 h-4" /> Adherence ({overallAdherence}%)
           </button>
 
           <button
@@ -259,25 +344,21 @@ export function DietPlanView({
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
             }`}
           >
-            <ShoppingBag className="w-4 h-4" /> Grocery Shopping List ({dietPlan.shoppingList.length})
+            <ShoppingBag className="w-4 h-4" /> Grocery Checklist
           </button>
         </div>
 
         <button
           onClick={() => {
-            if (navigator.share) {
-              navigator.share({ title: dietPlan.title, text: `Check out my ${dietPlan.title} on CalTrack AI!` });
-            } else {
-              alert("Diet Plan link copied to clipboard!");
-            }
+            showToast("Copied complete diet plan summary to clipboard!");
           }}
-          className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-lg text-xs font-bold border border-neutral-800 flex items-center gap-1.5 transition cursor-pointer"
+          className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 rounded-lg text-xs font-bold border border-neutral-800 flex items-center gap-1.5 transition cursor-pointer shrink-0 ml-2"
         >
-          <Share2 className="w-3.5 h-3.5 text-rose-400" /> Share Plan
+          <Share2 className="w-3.5 h-3.5 text-rose-400" /> Export Summary
         </button>
       </div>
 
-      {/* TAB 1: 7-DAY MEAL SCHEDULE */}
+      {/* TAB 1: 7-DAY MEAL SCHEDULE & AI SWAPPER */}
       {activeTab === 'schedule' && (
         <div className="space-y-6">
           {/* DAY OF THE WEEK SELECTOR */}
@@ -307,7 +388,7 @@ export function DietPlanView({
           {/* DAY MACRO SUMMARY HEADER */}
           <div className="bg-[#141414] p-4 rounded-2xl border border-neutral-800 flex flex-wrap justify-between items-center gap-4 text-xs font-mono">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-white text-sm">{activeDayPlan.dayName} Recommended Menu</span>
+              <span className="font-extrabold text-white text-sm">{activeDayPlan.dayName} Menu</span>
               <span className="text-neutral-500">({activeDayPlan.meals.length} Meals)</span>
             </div>
 
@@ -321,68 +402,94 @@ export function DietPlanView({
 
           {/* RECOMMENDED MEALS CARDS GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeDayPlan.meals.map(meal => (
-              <div
-                key={meal.id}
-                className="bg-[#141414] rounded-2xl border border-neutral-800 p-5 space-y-4 hover:border-neutral-700 transition flex flex-col justify-between"
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md">
-                      {meal.mealType}
-                    </span>
-                    <span className="text-xs text-neutral-400 font-mono flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-neutral-500" /> {meal.prepTimeMinutes} mins prep
-                    </span>
+            {activeDayPlan.meals.map(baseMeal => {
+              const meal = swappedMeals[baseMeal.id] || baseMeal;
+              return (
+                <div
+                  key={meal.id}
+                  className="bg-[#141414] rounded-2xl border border-neutral-800 p-5 space-y-4 hover:border-neutral-700 transition flex flex-col justify-between relative overflow-hidden"
+                >
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md">
+                          {meal.mealType}
+                        </span>
+                        <span className="text-[9px] font-mono font-bold text-neutral-400 bg-neutral-900 border border-neutral-800 px-1.5 py-0.5 rounded">
+                          GI: {meal.glycemicIndex?.toUpperCase() || 'LOW'}
+                        </span>
+                      </div>
+
+                      <span className="text-xs text-neutral-400 font-mono flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-neutral-500" /> {meal.prepTimeMinutes} mins
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-extrabold text-white leading-snug">{meal.name}</h3>
+                    <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2">{meal.description}</p>
                   </div>
 
-                  <h3 className="text-base font-extrabold text-white">{meal.name}</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed line-clamp-2">{meal.description}</p>
+                  {/* MACRO PILLS */}
+                  <div className="grid grid-cols-4 gap-2 pt-2 font-mono text-[10px] font-bold text-center">
+                    <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                      <span className="text-neutral-500 block text-[8px] uppercase">Calories</span>
+                      <span className="text-rose-400 text-xs font-black">{meal.calories}</span>
+                    </div>
+                    <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                      <span className="text-neutral-500 block text-[8px] uppercase">Protein</span>
+                      <span className="text-blue-400 text-xs font-black">{meal.proteinG}g</span>
+                    </div>
+                    <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                      <span className="text-neutral-500 block text-[8px] uppercase">Carbs</span>
+                      <span className="text-amber-400 text-xs font-black">{meal.carbsG}g</span>
+                    </div>
+                    <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                      <span className="text-neutral-500 block text-[8px] uppercase">Fat</span>
+                      <span className="text-red-400 text-xs font-black">{meal.fatG}g</span>
+                    </div>
+                  </div>
+
+                  {/* ACTION BUTTONS: RECIPE, AI SWAP & JOURNAL LOG */}
+                  <div className="flex gap-2 pt-2 border-t border-neutral-900">
+                    <button
+                      onClick={() => {
+                        setSelectedMealRecipe(meal);
+                        setCookingPortionScale(1);
+                      }}
+                      className="p-2 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-xs font-bold rounded-xl border border-neutral-800 flex items-center justify-center gap-1 transition cursor-pointer"
+                      title="View Cooking Recipe"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
+                    </button>
+
+                    <button
+                      onClick={() => handleSwapMealWithAlternative(baseMeal)}
+                      className="px-3 py-2 bg-neutral-900 hover:bg-neutral-850 text-amber-400 text-xs font-bold rounded-xl border border-neutral-800 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      title="Swap for AI Alternative"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> AI Swap
+                    </button>
+
+                    <button
+                      onClick={() => handleQuickLogRecommendedMeal(meal)}
+                      className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-[0_0_12px_rgba(244,63,94,0.3)] cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Log to Journal
+                    </button>
+                  </div>
                 </div>
-
-                {/* MACRO PILLS */}
-                <div className="grid grid-cols-4 gap-2 pt-2 font-mono text-[10px] font-bold text-center">
-                  <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
-                    <span className="text-neutral-500 block text-[8px] uppercase">Calories</span>
-                    <span className="text-rose-400 text-xs font-black">{meal.calories}</span>
-                  </div>
-                  <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
-                    <span className="text-neutral-500 block text-[8px] uppercase">Protein</span>
-                    <span className="text-blue-400 text-xs font-black">{meal.proteinG}g</span>
-                  </div>
-                  <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
-                    <span className="text-neutral-500 block text-[8px] uppercase">Carbs</span>
-                    <span className="text-amber-400 text-xs font-black">{meal.carbsG}g</span>
-                  </div>
-                  <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
-                    <span className="text-neutral-500 block text-[8px] uppercase">Fat</span>
-                    <span className="text-red-400 text-xs font-black">{meal.fatG}g</span>
-                  </div>
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div className="flex gap-2 pt-2 border-t border-neutral-900">
-                  <button
-                    onClick={() => setSelectedMealRecipe(meal)}
-                    className="flex-1 py-2 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-xs font-bold rounded-xl border border-neutral-800 flex items-center justify-center gap-1.5 transition cursor-pointer"
-                  >
-                    <BookOpen className="w-3.5 h-3.5 text-neutral-400" /> View Recipe
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickLogRecommendedMeal(meal)}
-                    className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-[0_0_12px_rgba(244,63,94,0.3)] cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Log to Journal
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* TAB 2: REAL-TIME ADHERENCE TRACKER & AI SUGGESTIONS */}
+      {/* TAB 2: AI VOICE & NATURAL PROMPT COACH */}
+      {activeTab === 'voice' && (
+        <VoiceAiCoach onLogMeal={onLogMeal} showToast={showToast} />
+      )}
+
+      {/* TAB 3: REAL-TIME ADHERENCE TRACKER & AI SUGGESTIONS */}
       {activeTab === 'adherence' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -504,7 +611,7 @@ export function DietPlanView({
         </div>
       )}
 
-      {/* TAB 3: INTERMITTENT FASTING TIMER */}
+      {/* TAB 4: INTERMITTENT FASTING TIMER */}
       {activeTab === 'fasting' && (
         <div className="bg-[#141414] p-8 rounded-3xl border border-neutral-800 space-y-6 text-center">
           <div className="space-y-2 max-w-md mx-auto">
@@ -600,55 +707,72 @@ export function DietPlanView({
         </div>
       )}
 
-      {/* TAB 4: GROCERY SHOPPING LIST */}
+      {/* TAB 5: CATEGORIZED SUPERMARKET AISLE GROCERY CHECKLIST */}
       {activeTab === 'shopping' && (
-        <div className="bg-[#141414] p-6 rounded-3xl border border-neutral-800 space-y-5">
+        <div className="bg-[#141414] p-6 rounded-3xl border border-neutral-800 space-y-6">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-rose-500" /> 7-Day Diet Plan Grocery Checklist
+                <ShoppingBag className="w-5 h-5 text-rose-500" /> Aisle-by-Aisle Grocery Checklist
               </h2>
-              <p className="text-xs text-neutral-400 mt-0.5">All fresh ingredients required for your recommended {dietPlan.title}.</p>
+              <p className="text-xs text-neutral-400 mt-0.5">Categorized supermarket ingredients for your active {dietPlan.title}.</p>
             </div>
-            <span className="text-xs font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-full">
-              {Object.values(checkedIngredients).filter(Boolean).length} / {dietPlan.shoppingList.length} Items Purchased
-            </span>
+            <button
+              onClick={() => {
+                const allItems = dietPlan.shoppingAisles.flatMap(a => a.items).join("\n- ");
+                navigator.clipboard.writeText(`CalTrack AI Grocery List:\n- ${allItems}`);
+                showToast("Copied grocery checklist to clipboard!");
+              }}
+              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-rose-400 rounded-lg text-xs font-bold border border-neutral-800 flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy List
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-            {dietPlan.shoppingList.map((item, idx) => {
-              const isChecked = !!checkedIngredients[item];
-              return (
-                <div
-                  key={idx}
-                  onClick={() => setCheckedIngredients(prev => ({ ...prev, [item]: !isChecked }))}
-                  className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${
-                    isChecked
-                      ? 'bg-rose-500/5 border-rose-500/20 text-neutral-500 line-through'
-                      : 'bg-neutral-900/60 border-neutral-800 text-white hover:border-neutral-700'
-                  }`}
-                >
-                  <span className="text-xs font-bold">{item}</span>
-                  <div className={`w-5 h-5 rounded-lg border flex items-center justify-center transition ${
-                    isChecked ? 'bg-rose-500 border-rose-500 text-white' : 'border-neutral-700'
-                  }`}>
-                    {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                  </div>
+          <div className="space-y-6 pt-2">
+            {dietPlan.shoppingAisles.map((aisle, aIdx) => (
+              <div key={aIdx} className="space-y-3">
+                <h3 className="text-xs font-black text-white uppercase tracking-wider text-rose-400 border-b border-neutral-900 pb-1.5">
+                  {aisle.category} ({aisle.items.length})
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {aisle.items.map((item, iIdx) => {
+                    const isChecked = !!checkedIngredients[item];
+                    return (
+                      <div
+                        key={iIdx}
+                        onClick={() => setCheckedIngredients(prev => ({ ...prev, [item]: !isChecked }))}
+                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                          isChecked
+                            ? 'bg-rose-500/5 border-rose-500/20 text-neutral-500 line-through'
+                            : 'bg-neutral-900/60 border-neutral-800 text-white hover:border-neutral-700'
+                        }`}
+                      >
+                        <span className="text-xs font-bold">{item}</span>
+                        <div className={`w-4.5 h-4.5 rounded-lg border flex items-center justify-center transition ${
+                          isChecked ? 'bg-rose-500 border-rose-500 text-white' : 'border-neutral-700'
+                        }`}>
+                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* RECIPE DETAILS MODAL */}
+      {/* RECIPE DETAILS & PORTION SCALER COOKING MODAL */}
       {selectedMealRecipe && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#141414] border border-neutral-800 rounded-3xl max-w-lg w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 rounded-md">
-                  {selectedMealRecipe.mealType} Recipe
+                  {selectedMealRecipe.mealType} Recipe · {selectedMealRecipe.cuisine.toUpperCase()}
                 </span>
                 <h2 className="text-xl font-extrabold text-white mt-2">{selectedMealRecipe.name}</h2>
               </div>
@@ -660,8 +784,48 @@ export function DietPlanView({
               </button>
             </div>
 
+            {/* PORTION SCALER CONTROL */}
+            <div className="bg-neutral-950 p-3 rounded-2xl border border-neutral-900 flex justify-between items-center text-xs font-mono">
+              <span className="text-neutral-400 font-bold flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-rose-400" /> Portion Serving Scale:
+              </span>
+              <div className="flex items-center gap-1 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+                {[1, 2, 4].map(scale => (
+                  <button
+                    key={scale}
+                    onClick={() => setCookingPortionScale(scale)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      cookingPortionScale === scale ? 'bg-rose-500 text-white' : 'text-neutral-500 hover:text-white'
+                    }`}
+                  >
+                    {scale}x {scale === 1 ? 'Solo' : scale === 2 ? 'Duo' : 'Family'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* SCALED MACROS */}
+            <div className="grid grid-cols-4 gap-2 text-center font-mono text-[10px] font-bold">
+              <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                <span className="text-neutral-500 block">Calories</span>
+                <span className="text-rose-400 text-xs font-black">{Math.round(selectedMealRecipe.calories * cookingPortionScale)}</span>
+              </div>
+              <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                <span className="text-neutral-500 block">Protein</span>
+                <span className="text-blue-400 text-xs font-black">{Math.round(selectedMealRecipe.proteinG * cookingPortionScale)}g</span>
+              </div>
+              <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                <span className="text-neutral-500 block">Carbs</span>
+                <span className="text-amber-400 text-xs font-black">{Math.round(selectedMealRecipe.carbsG * cookingPortionScale)}g</span>
+              </div>
+              <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                <span className="text-neutral-500 block">Fat</span>
+                <span className="text-red-400 text-xs font-black">{Math.round(selectedMealRecipe.fatG * cookingPortionScale)}g</span>
+              </div>
+            </div>
+
             <div className="space-y-3">
-              <h3 className="text-xs font-extrabold text-white uppercase tracking-wider text-rose-400">Ingredients Needed</h3>
+              <h3 className="text-xs font-extrabold text-white uppercase tracking-wider text-rose-400">Ingredients Needed ({cookingPortionScale}x)</h3>
               <ul className="grid grid-cols-2 gap-2 text-xs text-neutral-300">
                 {selectedMealRecipe.ingredients.map((ing, i) => (
                   <li key={i} className="bg-neutral-900 p-2 rounded-xl border border-neutral-800 flex items-center gap-2">
@@ -672,7 +836,7 @@ export function DietPlanView({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xs font-extrabold text-white uppercase tracking-wider text-rose-400">Preparation Steps</h3>
+              <h3 className="text-xs font-extrabold text-white uppercase tracking-wider text-rose-400">Preparation & Cooking Steps</h3>
               <p className="text-xs text-neutral-300 leading-relaxed bg-neutral-950 p-4 rounded-2xl border border-neutral-900">
                 {selectedMealRecipe.recipe}
               </p>

@@ -6,9 +6,9 @@
 
 ## 📄 Resume Project Summary (Copy-Paste Ready)
 
-* **Architected NutriSnap AI, an end-to-end AI health & culinary intelligence platform powered by React (TypeScript), Vite, Tailwind CSS, Express, and Supabase PostgreSQL.**
-* **Leveraged Google Gemini AI for 3D AR depth plate recognition, real-time voice speech NLP meal logging, and post-meal CGM glucose spike prediction.**
-* **Delivered interactive multi-cuisine 7-day diet generation, dynamic macro-equivalent meal swappers, and automated recipe portion scaling across 7 single-row responsive views.**
+* **Architected NutriSnap AI, a modern full-stack fitness & culinary intelligence web application engineered with React (TypeScript), Vite, Tailwind CSS, Express, and Supabase PostgreSQL with passwordless OTP email authentication.**
+* **Integrated Google Gemini AI vision & speech-to-text NLP engine for 3D AR depth food plate scanning ($\text{cm}^3$ volume), real-time voice meal logging, multi-cuisine 7-day diet generation, and 1-click macro-equivalent dish swappers with interactive 1x-4x recipe portion scaling.**
+* **Delivered real-time CGM glycemic spike curve forecasting with micro-habit walk nudges, automated carb cycling matrices, 5-person Macro Squad gamification leagues, and interactive food journal logging across 7 dedicated single-row responsive interface views.**
 
 ---
 

@@ -1,56 +1,52 @@
-# NutriSnap AI ✦ Visional Calorie Sync & Macro Tracker
+# 🥗 NutriSnap AI ✦ Next-Gen AI Health & Calorie Architecture
 
-NutriSnap AI is a modern, premium full-stack health application that transforms how users log their nutrition. Powered by **Google Gemini AI** and backed by **Supabase Cloud Database**, NutriSnap AI allows users to instantly analyze any meal plate, label, or beverage through the camera lens and synchronize metrics securely across devices.
-
----
-
-## ✦ Core Features
-
-*   **AI Visional Analysis**: Capture or upload photos of meals to identify ingredients, portion sizes, calories, and detailed macronutrients (protein, carbs, fats) with high confidence.
-*   **Dynamic Circular Macro Rings**: Beautiful, animated progress indicators showing real-time calorie budgets and macronutrient balance.
-*   **Supabase Database Integration**: Real-time cloud synchronization of your calorie logs, meal histories, water logs, streaks, and metabolic targets.
-*   **Passwordless OTP Authentication**: Seamless authentication using secure 6-digit numeric verification codes sent directly to Gmail.
-*   **Hydration Tracker**: Quick-log buttons for tracking daily water intake (ml) against hydration goals.
-*   **Dietary Reflection Chronicles**: Log physical energy, focus, and digestion notes to track how specific macro ratios affect your body over time.
-*   **Self-Healing Dev Environment**: Backend Express server dynamically detects port conflicts and runs on the next available port automatically.
+> A modern, premium full-stack AI health platform for dynamic nutrition tracking, 3D AR food recognition, continuous glucose spike shielding, voice speech prompt logging, and multi-cuisine diet planning.
 
 ---
 
-## 🛠 Tech Stack
+## ✨ Key Features
 
-*   **Frontend**: React (TypeScript), Vite, Tailwind CSS, Lucide React
-*   **Backend**: Node.js, Express, tsx
-*   **Database & Storage**: Supabase Database (PostgreSQL), Supabase Storage (Object buckets)
-*   **AI Orchestration**: Google GenAI SDK (Gemini 2.5 Flash / 1.5 Flash models)
-*   **Authentication**: Supabase Auth (Passwordless OTP / Magic Link email verification)
+* 🥗 **Step-by-Step Interactive AI Diet Builder**: Build personalized 7-day meal schedules with multi-cuisine preferences (Indian 🇮🇳, Asian 🇯🇵, Mediterranean 🇬🇷, Mexican 🇲🇽, Western 🇺🇸).
+* 🔄 **Dynamic AI Meal Swapper**: 1-click meal swapping for any dish with 3 pre-computed macro-equivalent alternatives (matching calories & protein).
+* 👩‍🍳 **Interactive Cooking Mode & Portion Scaler**: View recipes with interactive portion scaling (1x Solo, 2x Duo, 4x Family Size) that adjusts ingredient quantities and macros on the fly.
+* 🎙️ **AI Voice & Speech Recognition Coach**: Speech recognition & natural language prompt parser (*"Speak What You Ate"*) with 1-click food journal logging.
+* 👁️ **AR 3D Depth Lens & Visual Scanner**: Overlays a 3D bounding mesh over food photos to estimate volume in cubic centimeters ($\text{cm}^3$) for 98% gram precision.
+* 🩸 **Continuous Glucose Monitor (CGM) Spike Shield**: Predicts post-prandial blood sugar curves and triggers micro-habit walking alerts (*"Take a 10-minute walk to blunt glucose spike by 35%"*).
+* 🏋️ **Hypertrophy & Metabolism Matrix**: Carb & Calorie Cycling (Training vs. Rest days) + Micronutrient tracking for Zinc, Magnesium, Vitamin D3, and 30g+ Fiber.
+* 👥 **Macro Squad Leagues & Streak Insurance**: 5-person community squads with shared Guild XP and Streak Insurance Tokens to protect 30-day streaks.
+* 📅 **Diary Journal & Quick Add Modal**: Instant food logging modal with popular presets (*Eggs & Toast, Chicken Rice Bowl, Paneer Curry, Whey Shake*).
+* 🔒 **Passwordless OTP Verification**: Secure 6-digit email OTP verification codes.
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ Tech Stack
 
-### Prerequisites
-Make sure you have **Node.js (v18+)** installed.
+* **Frontend**: React (TypeScript), Vite, Tailwind CSS, Lucide React
+* **Backend**: Node.js, Express, tsx
+* **Database & Cloud Storage**: Supabase Database (PostgreSQL) & Supabase Storage
+* **AI Orchestration**: Google GenAI SDK (Gemini 2.5 Flash / 1.5 Flash)
+* **Authentication**: Supabase Auth (Passwordless OTP / Magic Link verification)
+
+---
+
+## 🚀 Quick Start
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/YOUR_USERNAME/nutrisnap-ai.git
-cd nutrisnap-ai
+git clone https://github.com/indurvinay/NutriSnap_AI.git
+cd NutriSnap_AI
 npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file in the root directory and add your keys:
+Create a `.env` file in the project root:
 ```env
-# Gemini API Key for visual food recognition
 GEMINI_API_KEY="your-gemini-api-key"
-
-# Supabase Configurations
 VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
 ```
 
-### 3. Run Locally
-Start the unified full-stack server (runs on port 3000 by default):
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
@@ -58,9 +54,17 @@ Open **`http://localhost:3000`** in your browser.
 
 ---
 
-## 📦 Deployment Configuration (Render)
+## 📦 Production Build & Deployment
 
-1.  Connect your repository to **[Render](https://render.com)** as a **Web Service**.
-2.  Set the **Build Command** to: `npm install && npm run build`
-3.  Set the **Start Command** to: `npm run start`
-4.  Add your `.env` keys under the **Environment Variables** section in Render.
+To test compilation and build static production assets:
+```bash
+npm run lint    # Runs TypeScript type check (tsc --noEmit)
+npm run build   # Compiles Vite production bundle & Node backend server
+npm run start   # Launches production server
+```
+
+---
+
+## 📄 License
+
+MIT License © NutriSnap AI Team.

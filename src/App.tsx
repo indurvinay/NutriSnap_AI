@@ -125,6 +125,15 @@ export default function App() {
   const [openSettings, setOpenSettings] = useState<boolean>(false);
   const [localReflection, setLocalReflection] = useState<string>('');
 
+  // Quick Add Food Modal states
+  const [quickAddModalSlot, setQuickAddModalSlot] = useState<MealType | null>(null);
+  const [quickFoodName, setQuickFoodName] = useState<string>('');
+  const [quickPortionStr, setQuickPortionStr] = useState<string>('1 serving');
+  const [quickCalVal, setQuickCalVal] = useState<string>('350');
+  const [quickProtVal, setQuickProtVal] = useState<string>('25');
+  const [quickCarbVal, setQuickCarbVal] = useState<string>('30');
+  const [quickFatVal, setQuickFatVal] = useState<string>('10');
+
   // Initialize dates
   useEffect(() => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -803,6 +812,43 @@ export default function App() {
     }
   };
 
+  // QUICK SUBMIT FOOD ITEM FROM MODAL
+  const handleQuickSubmitFood = () => {
+    if (!quickAddModalSlot || !quickFoodName.trim()) {
+      triggerToast("Please enter a food item name!");
+      return;
+    }
+
+    const cal = Number(quickCalVal) || 0;
+    const prot = Number(quickProtVal) || 0;
+    const carb = Number(quickCarbVal) || 0;
+    const fat = Number(quickFatVal) || 0;
+
+    handleLogMeal(
+      quickAddModalSlot,
+      quickFoodName.trim(),
+      [
+        {
+          name: quickFoodName.trim(),
+          portion: quickPortionStr || '1 serving',
+          calories: cal,
+          proteinG: prot,
+          carbsG: carb,
+          fatG: fat,
+          category: 'Quick Add'
+        }
+      ],
+      cal,
+      prot,
+      carb,
+      fat
+    );
+
+    setQuickAddModalSlot(null);
+    setQuickFoodName('');
+    triggerToast(`Added ${quickFoodName} to ${quickAddModalSlot.toUpperCase()} journal! 🥗`);
+  };
+
   // WATER INTAKE INCREMENTOR
   const handleWaterAdd = async (amountMl: number) => {
     const currentLog = getDailyLogForDate(activeDate);
@@ -1328,12 +1374,12 @@ export default function App() {
                           
                           <button
                             onClick={() => {
-                              setActiveTab('search');
+                              setQuickAddModalSlot(slot.key as MealType);
                             }}
-                            className="bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-rose-400 p-1.5 rounded-lg border border-neutral-850 hover:border-neutral-700 transition"
-                            title="Add food mechanically"
+                            className="bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-rose-400 p-1.5 rounded-lg border border-neutral-850 hover:border-neutral-700 transition cursor-pointer"
+                            title={`Add food item to ${slot.label}`}
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-3.5 h-3.5 text-rose-500" />
                           </button>
                         </div>
                       </div>
@@ -1391,8 +1437,8 @@ export default function App() {
                 </div>
                 <div className="flex gap-2.5 w-full sm:w-auto">
                   <button
-                    onClick={() => setActiveTab('search')}
-                    className="flex-1 sm:flex-none px-4 py-2.5 bg-neutral-900 hover:bg-neutral-850 hover:text-white text-neutral-300 rounded-xl text-xs font-bold border border-neutral-800 transition flex items-center justify-center gap-1.5 shadow-inner"
+                    onClick={() => setQuickAddModalSlot('lunch')}
+                    className="flex-1 sm:flex-none px-4 py-2.5 bg-neutral-900 hover:bg-neutral-850 hover:text-white text-neutral-300 rounded-xl text-xs font-bold border border-neutral-800 transition flex items-center justify-center gap-1.5 shadow-inner cursor-pointer"
                     title="Quick add mechanical items"
                   >
                     <Plus className="w-3.5 h-3.5 text-rose-500 mr-1.5" /> Manual Entry
@@ -1576,6 +1622,139 @@ export default function App() {
             />
           </div>
         )}
+
+      {/* QUICK ADD FOOD MODAL */}
+      {quickAddModalSlot && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#141414] border border-neutral-800 rounded-3xl max-w-md w-full p-6 space-y-5 animate-scaleUp">
+            <div className="flex justify-between items-center border-b border-neutral-900 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-rose-500/10 text-rose-500 rounded-xl border border-rose-500/20">
+                  <Plus className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-base font-black text-white">Add Item to {quickAddModalSlot.toUpperCase()}</h3>
+                  <span className="text-[10px] text-neutral-500 block">Instant Food Journal Log</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setQuickAddModalSlot(null)}
+                className="text-neutral-500 hover:text-white p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* PRESET CHIPS */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] text-neutral-500 font-black uppercase tracking-wider block">Popular Fast Presets:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { name: "2 Scrambled Eggs & Toast", cal: "340", prot: "22", carb: "24", fat: "16" },
+                  { name: "Grilled Chicken & Rice Bowl", cal: "550", prot: "45", carb: "50", fat: "12" },
+                  { name: "Paneer Curry & Roti", cal: "480", prot: "28", carb: "45", fat: "20" },
+                  { name: "Fruit & Yogurt Parfait", cal: "280", prot: "16", carb: "38", fat: "6" },
+                  { name: "Whey Protein Shake", cal: "220", prot: "32", carb: "8", fat: "4" }
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setQuickFoodName(preset.name);
+                      setQuickCalVal(preset.cal);
+                      setQuickProtVal(preset.prot);
+                      setQuickCarbVal(preset.carb);
+                      setQuickFatVal(preset.fat);
+                    }}
+                    className="px-2.5 py-1 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 rounded-lg text-[10px] font-bold border border-neutral-800 transition cursor-pointer"
+                  >
+                    + {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* INPUT FIELDS */}
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="text-[10px] text-neutral-400 font-bold uppercase block mb-1">Food / Dish Name</label>
+                <input
+                  type="text"
+                  value={quickFoodName}
+                  onChange={(e) => setQuickFoodName(e.target.value)}
+                  placeholder="E.g. Avocado Toast with Poached Egg"
+                  className="w-full bg-neutral-950 border border-neutral-800 focus:border-rose-500 text-xs text-white rounded-xl p-3 focus:outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-neutral-400 font-bold uppercase block mb-1">Portion Size</label>
+                <input
+                  type="text"
+                  value={quickPortionStr}
+                  onChange={(e) => setQuickPortionStr(e.target.value)}
+                  placeholder="E.g. 1 serving / 200g"
+                  className="w-full bg-neutral-950 border border-neutral-800 focus:border-rose-500 text-xs text-white rounded-xl p-3 focus:outline-none transition"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
+                <div>
+                  <label className="text-[9px] text-rose-400 font-black uppercase block mb-1">Calories</label>
+                  <input
+                    type="number"
+                    value={quickCalVal}
+                    onChange={(e) => setQuickCalVal(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 focus:border-rose-500 text-xs text-white rounded-xl p-2.5 font-black text-center focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] text-blue-400 font-black uppercase block mb-1">Prot (g)</label>
+                  <input
+                    type="number"
+                    value={quickProtVal}
+                    onChange={(e) => setQuickProtVal(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 focus:border-blue-500 text-xs text-white rounded-xl p-2.5 font-black text-center focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] text-amber-400 font-black uppercase block mb-1">Carb (g)</label>
+                  <input
+                    type="number"
+                    value={quickCarbVal}
+                    onChange={(e) => setQuickCarbVal(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 focus:border-amber-500 text-xs text-white rounded-xl p-2.5 font-black text-center focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] text-red-400 font-black uppercase block mb-1">Fat (g)</label>
+                  <input
+                    type="number"
+                    value={quickFatVal}
+                    onChange={(e) => setQuickFatVal(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 focus:border-red-500 text-xs text-white rounded-xl p-2.5 font-black text-center focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleQuickSubmitFood}
+                className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs rounded-xl shadow-[0_0_15px_rgba(244,63,94,0.3)] transition cursor-pointer"
+              >
+                Log Meal Now
+              </button>
+              <button
+                onClick={() => setQuickAddModalSlot(null)}
+                className="px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 text-xs font-bold rounded-xl border border-neutral-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       </main>
 

@@ -4,6 +4,13 @@
 
 ---
 
+## 📄 Resume Project Summary (Copy-Paste Ready)
+
+* **Built NutriSnap AI, a full-stack health & macro tracking web platform using React (TypeScript), Vite, Tailwind CSS, Express, and Supabase PostgreSQL with passwordless OTP email authentication.**
+* **Integrated Google Gemini AI for 3D AR depth plate scanning, real-time voice speech recognition logging, post-prandial CGM glucose spike prediction, and multi-cuisine 7-day diet generation with dynamic macro-equivalent meal swappers.**
+
+---
+
 ## ✨ Key Features
 
 * 🥗 **Step-by-Step Interactive AI Diet Builder**: Build personalized 7-day meal schedules with multi-cuisine preferences (Indian 🇮🇳, Asian 🇯🇵, Mediterranean 🇬🇷, Mexican 🇲🇽, Western 🇺🇸).
